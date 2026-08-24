@@ -43,8 +43,12 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const onPublicPath = isPublicPath(pathname);
+  // API routes do their own auth check and return a proper { error }
+  // JSON body (§8) — redirecting them to the HTML sign-in page here
+  // would hide that behind a 307 for every fetch()-based caller.
+  const isApiRoute = pathname.startsWith("/api/");
 
-  if (!user && !onPublicPath) {
+  if (!user && !onPublicPath && !isApiRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     return NextResponse.redirect(url);

@@ -20,6 +20,7 @@ export type FilmRow = {
   tmdb_rating: number | null;
   popularity: number | null;
   synced_at: string;
+  enriched_at: string | null;
 };
 
 function extractYear(releaseDate: string | null | undefined): number | null {
@@ -82,6 +83,7 @@ export async function upsertFilmDetail(
     tmdb_rating: detail.vote_average ?? null,
     popularity: detail.popularity ?? null,
     synced_at: new Date().toISOString(),
+    enriched_at: new Date().toISOString(),
   });
 }
 
@@ -95,9 +97,14 @@ export function isStale(syncedAt: string): boolean {
   return Date.now() - new Date(syncedAt).getTime() > THIRTY_DAYS_MS;
 }
 
-/** Search never populates runtime — only a full detail fetch does. */
+/**
+ * Whether a full detail fetch has ever completed for this film. Checks
+ * enriched_at rather than runtime !== null — some films genuinely have no
+ * runtime in TMDB (shorts, some documentaries), and treating that as "not
+ * fully detailed" would refetch them forever without ever gaining anything.
+ */
 export function hasFullDetail(row: FilmRow): boolean {
-  return row.runtime !== null;
+  return row.enriched_at !== null;
 }
 
 export function mapRowToFilmDetail(row: FilmRow): FilmDetail {

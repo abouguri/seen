@@ -62,6 +62,7 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
         place: input.place,
         company: input.company,
         createdAt: new Date().toISOString(),
+        tags: input.tags,
       };
       queryClient.setQueryData<WatchEntry[]>(queryKey, [optimisticEntry, ...previous]);
       setSheetOpen(false);
@@ -161,6 +162,18 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
                   <p className="text-footnote text-label-2 mt-1">
                     {[entry.place, entry.company].filter(Boolean).join(" · ")}
                   </p>
+                )}
+                {entry.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {entry.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-caption bg-surface-2 text-label-2 rounded-full px-2 py-1"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </button>
               <button

@@ -5,6 +5,7 @@ import { posterUrl, backdropUrl } from "@/lib/images";
 import { formatRuntime } from "@/lib/dates";
 import { copy } from "@/lib/copy";
 import { ViewingHistory } from "@/components/film/ViewingHistory";
+import { getEntryTags } from "@/lib/tags/resolve";
 import type { WatchEntry } from "@/lib/types";
 
 export default async function FilmDetailPage({
@@ -36,6 +37,11 @@ export default async function FilmDetailPage({
     .order("watched_on", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 
+  const tagsByEntry = await getEntryTags(
+    supabase,
+    (entryRows ?? []).map((row) => row.id),
+  );
+
   const entries: WatchEntry[] = (entryRows ?? []).map((row) => ({
     id: row.id,
     filmId: row.film_id,
@@ -47,6 +53,7 @@ export default async function FilmDetailPage({
     place: row.place,
     company: row.company,
     createdAt: row.created_at,
+    tags: tagsByEntry.get(row.id) ?? [],
   }));
 
   const backdrop = backdropUrl(detail.backdropPath, "w1280");

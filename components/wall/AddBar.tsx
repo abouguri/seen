@@ -8,7 +8,7 @@ export function AddBar({ count }: { count: number }) {
   return (
     <div className="material-chrome border-separator fixed inset-x-0 bottom-16 z-10 flex items-center justify-between border-t px-4 py-3 md:bottom-0 md:left-60">
       <span className="text-headline">{copy.wall.addedCount(count)}</span>
-      <Link href="/library" className="text-headline text-accent">
+      <Link href="/library" className="text-headline text-accent-text">
         {copy.wall.done}
       </Link>
     </div>

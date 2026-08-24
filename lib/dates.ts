@@ -62,6 +62,13 @@ export function formatWatchedDate({ watchedOn, precision, eraLabel }: WatchedDat
   }
 }
 
+/** "12 March 2017" for a full ISO timestamp (e.g. created_at) — stats'
+ *  first/last logged, which track when an entry was added, not watched. */
+export function formatLoggedDate(isoTimestamp: string): string {
+  const d = new Date(isoTimestamp);
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 /** "2h 46m" — used on film detail; TMDB gives runtime in minutes. */
 export function formatRuntime(minutes: number | null): string | null {
   if (!minutes || minutes <= 0) return null;

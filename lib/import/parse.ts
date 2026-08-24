@@ -29,13 +29,36 @@ function toDateOrNull(value: string | undefined): string | null {
   return /^\d{4}-\d{2}-\d{2}$/.test(value.trim()) ? value.trim() : null;
 }
 
+/**
+ * Letterboxd's export ZIP has several CSVs that all share this base shape
+ * (Date, Name, Year, Letterboxd URI) — watched.csv stops there, while
+ * diary.csv and ratings.csv add Rating (and diary.csv further adds
+ * Rewatch, Tags, Watched Date). Reading the extra columns only when
+ * present means one normalizer handles all three without branching on
+ * which file it is. Verified against real column names/order from
+ * Letterboxd's own diary.csv (Date, Name, Year, Letterboxd URI, Rating,
+ * Rewatch, Tags, Watched Date) — confirmed via third-party parsers built
+ * against real exports, since Letterboxd's own docs 403 automated fetches.
+ */
 function normalizeLetterboxdRow(row: Record<string, string>, rowIndex: number): NormalizedImportRow {
+  // Letterboxd rates on a 0.5-5 star scale in half-star increments; our
+  // scale is 1-10 integers. ×2 converts one to the other exactly, since
+  // every valid star value already lands on a half-integer.
+  const starRating = row["Rating"] ? Number(row["Rating"]) : null;
+  const rating =
+    starRating !== null && Number.isFinite(starRating) && starRating >= 0.5 && starRating <= 5
+      ? Math.round(starRating * 2)
+      : null;
+
   return {
     rowIndex,
     title: (row["Name"] ?? "").trim(),
     year: toIntOrNull(row["Year"]),
-    watchedOn: toDateOrNull(row["Date"]),
-    rating: null,
+    // diary.csv's "Watched Date" is the actual viewing date; "Date" is
+    // just when the entry was logged on the site. Fall back to "Date" for
+    // watched.csv/ratings.csv, which have no separate watched-date column.
+    watchedOn: toDateOrNull(row["Watched Date"] || row["Date"]),
+    rating,
   };
 }
 
@@ -47,6 +70,7 @@ function normalizeImdbRow(row: Record<string, string>, rowIndex: number): Normal
     year: toIntOrNull(row["Year"]),
     watchedOn: toDateOrNull(row["Date Rated"]),
     rating: rating !== null && rating >= 1 && rating <= 10 ? rating : null,
+    imdbId: row["Const"]?.trim() || undefined,
   };
 }
 

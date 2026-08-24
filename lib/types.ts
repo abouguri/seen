@@ -45,6 +45,7 @@ export type LibraryFilters = {
   decades: number[];
   genres: string[];
   directors: string[];
+  tags: string[];
 };
 
 export type ImportSource = "letterboxd" | "imdb" | "seen_export";
@@ -57,6 +58,9 @@ export type NormalizedImportRow = {
   year: number | null;
   watchedOn: string | null;
   rating: number | null;
+  /** IMDb's Const column — an exact external id, matched via TMDB's
+   *  /find endpoint before falling back to title+year search (fix 2). */
+  imdbId?: string;
   /** Only present for our own JSON export re-import — skips matching
    *  entirely since the film id is already known, and these carry the
    *  fields CSV formats have no column for, preserved for exact re-import. */
@@ -98,6 +102,17 @@ export type WatchEntry = {
   place: string | null;
   company: string | null;
   createdAt: string;
+  tags: string[];
+};
+
+export type Stats = {
+  filmsPerYear: { year: number; count: number }[];
+  decadesWatched: { decade: number; count: number }[];
+  mostSeenDirectors: { name: string; count: number }[];
+  totalHours: number;
+  longestGap: { filmId: number; title: string; days: number } | null;
+  firstLogged: { filmId: number; title: string; createdAt: string } | null;
+  lastLogged: { filmId: number; title: string; createdAt: string } | null;
 };
 
 /** Full-fidelity export shape (§6.9) — also the format re-imported for

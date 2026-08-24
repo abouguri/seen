@@ -17,6 +17,11 @@ export type TmdbSearchResponse = {
   results: TmdbSearchResult[];
 };
 
+/** Response shape from /find/{external_id}?external_source=... */
+export type TmdbFindResponse = {
+  movie_results: TmdbSearchResult[];
+};
+
 export type TmdbCrewMember = {
   job: string;
   name: string;

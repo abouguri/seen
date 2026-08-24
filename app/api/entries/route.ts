@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { copy } from "@/lib/copy";
+import { setEntryTags } from "@/lib/tags/resolve";
 import type { WatchEntry } from "@/lib/types";
 
 const bodySchema = z.object({
@@ -14,6 +15,7 @@ const bodySchema = z.object({
   note: z.string().trim().max(2000).nullable(),
   place: z.string().trim().max(200).nullable(),
   company: z.string().trim().max(200).nullable(),
+  tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 });
 
 // Poster wall (§6.2): era_label is always the 4-digit year that was
@@ -84,6 +86,17 @@ async function handleSingle(request: Request, supabase: SupabaseClient, user: Us
     );
   }
 
+  let tags: string[] = [];
+  if (input.tags.length > 0) {
+    try {
+      tags = await setEntryTags(supabase, data.id, user.id, input.tags);
+    } catch {
+      // The entry itself saved fine — tags are a lesser failure, not
+      // worth discarding the viewing over. Surfaced as an empty tag list;
+      // the user can re-add them from the entry.
+    }
+  }
+
   const entry: WatchEntry = {
     id: data.id,
     filmId: data.film_id,
@@ -95,6 +108,7 @@ async function handleSingle(request: Request, supabase: SupabaseClient, user: Us
     place: data.place,
     company: data.company,
     createdAt: data.created_at,
+    tags,
   };
 
   return NextResponse.json(entry, { status: 201 });

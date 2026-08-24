@@ -7,6 +7,7 @@ export type LibraryFilterState = {
   decade?: number;
   genre?: string;
   director?: string;
+  tag?: string;
   rated?: "rated" | "unrated";
 };
 
@@ -15,6 +16,7 @@ function buildQuery(sort: LibrarySort, filters: LibraryFilterState, page: number
   if (filters.decade !== undefined) params.set("decade", String(filters.decade));
   if (filters.genre) params.set("genre", filters.genre);
   if (filters.director) params.set("director", filters.director);
+  if (filters.tag) params.set("tag", filters.tag);
   if (filters.rated) params.set("rated", filters.rated);
   return params.toString();
 }

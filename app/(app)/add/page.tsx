@@ -9,6 +9,8 @@ import { usePosterWall } from "@/components/wall/use-poster-wall";
 import { Button } from "@/components/ui/Button";
 import { copy } from "@/lib/copy";
 import { useToast } from "@/components/ui/Toast";
+import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
+import { useRovingGrid } from "@/components/shared/useRovingGrid";
 import type { FilmSummary } from "@/lib/types";
 
 const SKELETON_COUNT = 12;
@@ -36,8 +38,14 @@ export default function AddPage() {
   const [error, setError] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const { tiles, mergeSeen, toggle, addedCount } = usePosterWall();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { tiles, mergeSeen, toggle, addedCount, isOffline } = usePosterWall();
   const { showToast } = useToast();
+  const { columns } = useResponsiveColumns(gridRef);
+  const { activeIndex, setActiveIndex, setItemRef, handleKeyDown } = useRovingGrid(
+    films.length,
+    columns,
+  );
 
   const loadFirstPage = useCallback((forYear: number) => {
     setFilms([]);
@@ -117,6 +125,11 @@ export default function AddPage() {
         <div className="mt-4">
           <YearScroller year={year} onChange={setYear} />
         </div>
+        {isOffline && (
+          <p className="text-footnote text-label-2 bg-surface-1 mx-4 mt-4 rounded-md px-3 py-2 md:mx-8">
+            {copy.wall.offline}
+          </p>
+        )}
       </div>
 
       {error && films.length === 0 ? (
@@ -128,8 +141,11 @@ export default function AddPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-2 px-4 pt-4 sm:grid-cols-4 md:px-8 lg:grid-cols-6 xl:grid-cols-8">
-            {films.map((film) => {
+          <div
+            ref={gridRef}
+            className="grid grid-cols-3 gap-2 px-4 pt-4 sm:grid-cols-4 md:px-8 lg:grid-cols-6 xl:grid-cols-8"
+          >
+            {films.map((film, index) => {
               const tile = tiles.get(film.id) ?? {
                 selected: film.seen,
                 removable: film.hasPosterWallEntry,
@@ -138,6 +154,10 @@ export default function AddPage() {
                 <PosterTile
                   key={film.id}
                   film={film}
+                  tileRef={setItemRef(index)}
+                  tabIndex={index === activeIndex ? 0 : -1}
+                  onKeyDown={(event) => handleKeyDown(event, index)}
+                  onFocus={() => setActiveIndex(index)}
                   selected={tile.selected}
                   removable={tile.removable}
                   onToggle={(filmId) => toggle(filmId, year)}

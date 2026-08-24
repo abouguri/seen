@@ -15,6 +15,7 @@ const rowSchema = z.object({
   year: z.number().int().nullable(),
   watchedOn: z.string().date().nullable(),
   rating: z.number().int().min(1).max(10).nullable(),
+  imdbId: z.string().trim().min(1).optional(),
   filmId: z.number().int().positive().optional(),
   precision: z.enum(["day", "month", "year", "era", "unknown"]).optional(),
   eraLabel: z.string().nullable().optional(),

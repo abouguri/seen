@@ -53,7 +53,7 @@ export function SettingsContent({ email }: { email: string }) {
         <p className="text-body text-label-2">
           {copy.settings.signedInAs} <span className="text-label">{email}</span>
         </p>
-        <button type="button" onClick={handleSignOut} className="text-body text-accent mt-3 text-left">
+        <button type="button" onClick={handleSignOut} className="text-body text-accent-text mt-3 text-left">
           {copy.account.signOut}
         </button>
       </Section>

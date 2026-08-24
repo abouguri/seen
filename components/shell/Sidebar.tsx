@@ -30,7 +30,7 @@ export function Sidebar() {
                   aria-current={active ? "page" : undefined}
                   className={clsx(
                     "text-headline flex min-h-11 items-center gap-3 rounded-md px-3",
-                    active ? "bg-accent-dim text-accent" : "text-label-2 hover:bg-surface-1",
+                    active ? "bg-accent-dim text-accent-text" : "text-label-2 hover:bg-surface-1",
                   )}
                 >
                   <Icon size={20} strokeWidth={2} />
@@ -48,7 +48,7 @@ export function Sidebar() {
           aria-current={settingsActive ? "page" : undefined}
           className={clsx(
             "text-headline flex min-h-11 w-full items-center gap-3 rounded-md px-3",
-            settingsActive ? "bg-accent-dim text-accent" : "text-label-2 hover:bg-surface-1",
+            settingsActive ? "bg-accent-dim text-accent-text" : "text-label-2 hover:bg-surface-1",
           )}
         >
           <Settings size={20} strokeWidth={2} />

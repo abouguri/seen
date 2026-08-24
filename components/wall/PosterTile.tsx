@@ -19,6 +19,12 @@ type PosterTileProps = {
    *  never deletes an entry it didn't create). */
   removable: boolean;
   onToggle: (filmId: number) => void;
+  /** Roving-tabindex grid traversal (§7.7) — only the active tile is a
+   *  Tab stop; arrow keys move it. */
+  tabIndex?: number;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  onFocus?: () => void;
+  tileRef?: (el: HTMLButtonElement | null) => void;
 };
 
 /**
@@ -27,7 +33,16 @@ type PosterTileProps = {
  * press-down scale, and one light haptic. Titles are hidden by default —
  * hover reveals them on desktop, long-press on touch.
  */
-export function PosterTile({ film, selected, removable, onToggle }: PosterTileProps) {
+export function PosterTile({
+  film,
+  selected,
+  removable,
+  onToggle,
+  tabIndex,
+  onKeyDown,
+  onFocus,
+  tileRef,
+}: PosterTileProps) {
   const reduceMotion = useReducedMotion();
   const [showTitleTouch, setShowTitleTouch] = useState(false);
   const isLongPress = useRef(false);
@@ -63,7 +78,11 @@ export function PosterTile({ film, selected, removable, onToggle }: PosterTilePr
 
   return (
     <motion.button
+      ref={tileRef}
       type="button"
+      tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
       aria-pressed={selected}
       aria-disabled={!interactive}
       aria-label={`${film.title}${selected ? ", seen" : ""}`}

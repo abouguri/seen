@@ -13,6 +13,7 @@ const querySchema = z.object({
   decade: z.coerce.number().int().optional(),
   genre: z.string().trim().min(1).optional(),
   director: z.string().trim().min(1).optional(),
+  tag: z.string().trim().min(1).optional(),
   rated: z.enum(["rated", "unrated"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
 });
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
     decade: searchParams.get("decade") ?? undefined,
     genre: searchParams.get("genre") ?? undefined,
     director: searchParams.get("director") ?? undefined,
+    tag: searchParams.get("tag") ?? undefined,
     rated: searchParams.get("rated") ?? undefined,
     page: searchParams.get("page") ?? undefined,
   });
@@ -59,14 +61,36 @@ export async function GET(request: Request) {
     );
   }
 
-  const { sort, decade, genre, director, rated, page } = parsed.data;
+  const { sort, decade, genre, director, tag, rated, page } = parsed.data;
   const sortConfig = SORT_CONFIG[sort];
+
+  let taggedFilmIds: number[] | null = null;
+  if (tag) {
+    const { data: taggedRows, error: tagError } = await supabase
+      .from("entry_tags")
+      .select("watch_entries!inner(film_id), tags!inner(name)")
+      .eq("tags.name", tag);
+    if (tagError) {
+      return NextResponse.json(
+        { error: { code: "query_failed", message: copy.errors.libraryLoadFailed } },
+        { status: 500 },
+      );
+    }
+    taggedFilmIds = [
+      ...new Set((taggedRows ?? []).map((row) => (row.watch_entries as unknown as { film_id: number }).film_id)),
+    ];
+    if (taggedFilmIds.length === 0) {
+      return NextResponse.json({ films: [], total: 0 });
+    }
+  }
 
   let query = supabase
     .from("user_films")
     .select("id, title, release_year, poster_path, watch_count, last_watched_on, rating", {
       count: "exact",
     });
+
+  if (taggedFilmIds) query = query.in("id", taggedFilmIds);
 
   if (decade !== undefined) {
     query = query.gte("release_year", decade).lt("release_year", decade + 10);

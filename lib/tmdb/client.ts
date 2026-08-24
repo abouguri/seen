@@ -1,5 +1,10 @@
 import "server-only";
-import type { TmdbMovieDetail, TmdbSearchResponse, TmdbSearchResult } from "@/lib/tmdb/raw-types";
+import type {
+  TmdbFindResponse,
+  TmdbMovieDetail,
+  TmdbSearchResponse,
+  TmdbSearchResult,
+} from "@/lib/tmdb/raw-types";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -58,6 +63,27 @@ export async function discoverTmdbMoviesByYear(
 
   const data = (await res.json()) as TmdbSearchResponse;
   return data.results;
+}
+
+/**
+ * IMDb import rows carry a real external id (the Const column) — exact
+ * enough to skip title/year search entirely (fix 2). Cached like search:
+ * an id maps to the same film for everyone.
+ */
+export async function findMovieByImdbId(imdbId: string): Promise<TmdbSearchResult[]> {
+  const url = `${TMDB_BASE}/find/${encodeURIComponent(imdbId)}?external_source=imdb_id`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: 86400 },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB find failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbFindResponse;
+  return data.movie_results;
 }
 
 export async function fetchTmdbMovieDetail(id: number): Promise<TmdbMovieDetail> {

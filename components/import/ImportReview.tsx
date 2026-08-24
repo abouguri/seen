@@ -121,7 +121,7 @@ export function ImportReview({ results, onCommit, committing }: ImportReviewProp
                       onClick={() => skip(r.rowIndex)}
                       className={clsx(
                         "text-footnote flex w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-md",
-                        resolution?.skipped ? "text-accent" : "text-label-2",
+                        resolution?.skipped ? "text-accent-text" : "text-label-2",
                       )}
                     >
                       <div className="bg-surface-2 flex aspect-[2/3] w-full items-center justify-center rounded-md">

@@ -10,6 +10,7 @@ import { SortSheet } from "@/components/library/SortSheet";
 import { FilterSheet } from "@/components/library/FilterSheet";
 import { useLibraryData, type LibraryFilterState } from "@/components/library/useLibraryData";
 import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
+import { useRovingGrid } from "@/components/shared/useRovingGrid";
 import { useCollapsingHeader, StickyInlineBar, LargeTitle } from "@/components/library/CollapsingHeader";
 import { LogViewingSheet, type LogViewingInput } from "@/components/film/LogViewingSheet";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
@@ -33,6 +34,7 @@ function parseFilters(params: URLSearchParams): LibraryFilterState {
     decade: decade ? Number(decade) : undefined,
     genre: params.get("genre") ?? undefined,
     director: params.get("director") ?? undefined,
+    tag: params.get("tag") ?? undefined,
     rated: rated === "rated" || rated === "unrated" ? rated : undefined,
   };
 }
@@ -65,6 +67,7 @@ function LibraryContent() {
       decade: next.decade !== undefined ? String(next.decade) : undefined,
       genre: next.genre,
       director: next.director,
+      tag: next.tag,
       rated: next.rated,
     });
   }
@@ -86,6 +89,10 @@ function LibraryContent() {
   useCollapsingHeader(scrollRef, barRef, titleRef);
 
   const { columns, containerWidth } = useResponsiveColumns(gridRef);
+  const { activeIndex, setActiveIndex, setItemRef, handleKeyDown } = useRovingGrid(
+    films.length,
+    columns,
+  );
   const tileWidth = columns > 0 ? (containerWidth - GAP_PX * (columns - 1)) / columns : 0;
   const rowHeight = tileWidth > 0 ? tileWidth * 1.5 + GAP_PX : 200;
   const rowCount = Math.ceil(films.length / columns);
@@ -238,13 +245,20 @@ function LibraryContent() {
                     className="grid gap-2"
                     style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
                   >
-                    {rows[virtualRow.index]?.map((film) => (
-                      <LibraryTile
-                        key={film.id}
-                        film={film}
-                        onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
-                      />
-                    ))}
+                    {rows[virtualRow.index]?.map((film, colIndex) => {
+                      const index = virtualRow.index * columns + colIndex;
+                      return (
+                        <LibraryTile
+                          key={film.id}
+                          film={film}
+                          onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                          tileRef={setItemRef(index)}
+                          tabIndex={index === activeIndex ? 0 : -1}
+                          onKeyDown={(event) => handleKeyDown(event, index)}
+                          onFocus={() => setActiveIndex(index)}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -254,11 +268,15 @@ function LibraryContent() {
               className="grid gap-2"
               style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
             >
-              {films.map((film) => (
+              {films.map((film, index) => (
                 <LibraryTile
                   key={film.id}
                   film={film}
                   onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                  tileRef={setItemRef(index)}
+                  tabIndex={index === activeIndex ? 0 : -1}
+                  onKeyDown={(event) => handleKeyDown(event, index)}
+                  onFocus={() => setActiveIndex(index)}
                 />
               ))}
             </div>

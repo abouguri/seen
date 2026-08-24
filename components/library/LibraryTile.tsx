@@ -11,6 +11,12 @@ const LONG_PRESS_MS = 500;
 type LibraryTileProps = {
   film: LibraryFilm;
   onContextMenu: (film: LibraryFilm, x: number, y: number) => void;
+  /** Roving-tabindex grid traversal (§7.7) — only the active tile is a
+   *  Tab stop; arrow keys move it. */
+  tabIndex?: number;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  onFocus?: () => void;
+  tileRef?: (el: HTMLButtonElement | null) => void;
 };
 
 /**
@@ -19,7 +25,14 @@ type LibraryTileProps = {
  * showpiece animation); long-press/right-click opens the context menu
  * instead of navigating.
  */
-export function LibraryTile({ film, onContextMenu }: LibraryTileProps) {
+export function LibraryTile({
+  film,
+  onContextMenu,
+  tabIndex,
+  onKeyDown,
+  onFocus,
+  tileRef,
+}: LibraryTileProps) {
   const router = useRouter();
   const imgRef = useRef<HTMLDivElement>(null);
   const isLongPress = useRef(false);
@@ -88,7 +101,11 @@ export function LibraryTile({ film, onContextMenu }: LibraryTileProps) {
 
   return (
     <button
+      ref={tileRef}
       type="button"
+      tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}

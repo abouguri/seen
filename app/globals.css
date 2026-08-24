@@ -28,6 +28,11 @@
   /* Accent is bright in both modes, so text on it stays dark for the
      4.5:1 contrast floor in §7.7 — not given a value in §7.1's table. */
   --on-accent: #000000;
+  /* For accent used as small standalone text (links, nav labels), not as
+     an icon fill or a button background — #FF9F0A on black clears 10:1,
+     so dark mode just reuses --accent. Light mode's #FF9500 on white is
+     only 2.20:1 there, below the 4.5:1 floor; overridden per-mode below. */
+  --accent-text: var(--accent);
 
   /* Translucent chrome for nav bars, tab bars, materials (§7.3) */
   --material-chrome: rgba(28, 28, 30, 0.72);
@@ -108,12 +113,23 @@
     --surface-3: #d1d1d6;
 
     --label: #000000;
-    --label-2: rgba(60, 60, 67, 0.6);
+    /* §7.1 gives .60, but that computes to 3.44:1 on white — below the
+       4.5:1 body-text floor in §7.7. .72 is the same tint of black, just
+       dense enough to clear it (4.74:1), measured, not eyeballed. */
+    --label-2: rgba(60, 60, 67, 0.72);
     --label-3: rgba(60, 60, 67, 0.3);
     --separator: rgba(60, 60, 67, 0.29);
 
     --accent: #ff9500;
     --accent-dim: rgba(255, 149, 0, 0.14);
+    --accent-text: #a66100;
+    /* §7.1 doesn't give separate light-mode danger/good values, so both
+       modes shared the dark ones — but #FF453A/#30D158 on white measure
+       3.41:1 / 2.02:1, below the floor for the body text they're used as
+       (error copy, the search "seen" badge). Darkened to the same hue at
+       4.66:1 / 4.64:1. Dark mode is unaffected — those already clear 6:1+. */
+    --danger: #d63a31;
+    --good: #1f8638;
 
     --material-chrome: rgba(242, 242, 247, 0.72);
   }
@@ -126,12 +142,15 @@
   --surface-3: #d1d1d6;
 
   --label: #000000;
-  --label-2: rgba(60, 60, 67, 0.6);
+  --label-2: rgba(60, 60, 67, 0.72);
   --label-3: rgba(60, 60, 67, 0.3);
   --separator: rgba(60, 60, 67, 0.29);
 
   --accent: #ff9500;
   --accent-dim: rgba(255, 149, 0, 0.14);
+  --accent-text: #a66100;
+  --danger: #d63a31;
+  --good: #1f8638;
 
   --material-chrome: rgba(242, 242, 247, 0.72);
 }
@@ -149,6 +168,7 @@
   --color-label-3: var(--label-3);
   --color-separator: var(--separator);
   --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
   --color-accent-dim: var(--accent-dim);
   --color-danger: var(--danger);
   --color-good: var(--good);

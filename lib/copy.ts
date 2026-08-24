@@ -29,7 +29,7 @@ export const copy = {
     title: "Library",
     emptyMessage:
       "Nothing here yet. Tap Add and start with a decade you remember well.",
-    noResultsForFilter: "No films match these filters.",
+    noResultsForFilter: "No films match these filters. Clear a filter and try again.",
     sortLabel: "Sort",
     sort: {
       recent_added: "Recently added",
@@ -49,6 +49,8 @@ export const copy = {
       allGenres: "All genres",
       allDirectors: "All directors",
       allRatings: "All",
+      tag: "Tag",
+      allTags: "All tags",
       clear: "Clear filters",
       apply: "Apply",
     },
@@ -62,9 +64,6 @@ export const copy = {
     removeConfirmBody: "This can't be undone.",
     removeAction: "Remove",
     cancelAction: "Cancel",
-  },
-  placeholder: {
-    stats: "Stats isn't built yet — it lands in a later milestone.",
   },
   account: {
     signOut: "Sign out",
@@ -120,6 +119,9 @@ export const copy = {
     placePlaceholder: "cinema, on a plane",
     companyLabel: "Who with",
     companyPlaceholder: "with my brother",
+    tagsLabel: "Tags",
+    tagsPlaceholder: "Add a tag and press enter",
+    removeTag: "Remove tag",
     submit: "Log a viewing",
     saving: "Saving…",
     close: "Close",
@@ -129,6 +131,20 @@ export const copy = {
     done: "Done",
     noResults: "No films found for this year.",
     addedCount: (n: number) => `${n} film${n === 1 ? "" : "s"} added`,
+    offline: "Offline — changes will sync",
+  },
+  stats: {
+    title: "Stats",
+    emptyMessage: "Nothing to show yet. Log a few films and check back.",
+    filmsPerYear: "Films per year",
+    decadesWatched: "Decades watched",
+    mostSeenDirectors: "Most-seen directors",
+    totalHours: "Total hours watched",
+    longestGap: "Longest gap between rewatches",
+    firstLogged: "First film logged",
+    lastLogged: "Most recent film logged",
+    daysSuffix: (n: number) => `${n} day${n === 1 ? "" : "s"} apart`,
+    loadFailed: "Couldn't load your stats. Check your connection and try again.",
   },
   settings: {
     title: "Settings",
@@ -155,7 +171,8 @@ export const copy = {
   import: {
     title: "Import",
     chooseFile: "Choose a file",
-    dropHint: "A Letterboxd watched.csv, an IMDb ratings export, or a SEEN export",
+    dropHint:
+      "A Letterboxd diary.csv or watched.csv, an IMDb ratings export, or a SEEN export. diary.csv also brings your ratings.",
     parsing: "Reading file…",
     unrecognisedFormat:
       "Couldn't recognise that file. Export a Letterboxd watched.csv, an IMDb ratings export, or a SEEN export, and try again.",

@@ -3,6 +3,7 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
+import { queueOfflineChange, getQueuedChanges, clearQueuedChanges } from "@/lib/offline/db";
 
 const FLUSH_INTERVAL_MS = 400;
 
@@ -30,11 +31,69 @@ type PendingChange = {
  * only the tiles in that batch — and only if nothing newer has already
  * changed them — never the whole session, and the queue is never
  * silently dropped without surfacing a toast.
+ *
+ * Offline (§9): a toggle made with no connection is never reverted — it
+ * stays optimistically selected and persists to IndexedDB, then flushes
+ * automatically once the browser reports `online` again. Reverting on
+ * connectivity loss would be wrong: the user tapped deliberately, and
+ * expects it to land once they're back.
  */
 export function usePosterWall() {
   const [tiles, setTiles] = useState<Map<number, TileState>>(new Map());
+  const [isOffline, setIsOffline] = useState(false);
+  const isOfflineRef = useRef(false);
   const queueRef = useRef<Map<number, PendingChange>>(new Map());
   const { showToast } = useToast();
+
+  useEffect(() => {
+    setIsOffline(!navigator.onLine);
+    isOfflineRef.current = !navigator.onLine;
+
+    // Reapply anything a previous offline session queued but never
+    // flushed (e.g. the tab closed before reconnecting), so the UI
+    // reflects it immediately instead of looking like the tap "didn't
+    // happen" until the retry succeeds.
+    getQueuedChanges()
+      .then((queued) => {
+        if (queued.length === 0) return;
+        setTiles((prev) => {
+          const next = new Map(prev);
+          for (const change of queued) {
+            next.set(change.filmId, {
+              selected: change.action === "add",
+              removable: change.action === "add",
+            });
+          }
+          return next;
+        });
+        for (const change of queued) {
+          queueRef.current.set(change.filmId, {
+            action: change.action,
+            eraLabel: change.eraLabel,
+            optimisticValue: {
+              selected: change.action === "add",
+              removable: change.action === "add",
+            },
+          });
+        }
+      })
+      .catch(() => {});
+
+    function handleOnline() {
+      isOfflineRef.current = false;
+      setIsOffline(false);
+    }
+    function handleOffline() {
+      isOfflineRef.current = true;
+      setIsOffline(true);
+    }
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   function mergeSeen(films: { id: number; seen: boolean; hasPosterWallEntry: boolean }[]) {
     setTiles((prev) => {
@@ -63,11 +122,21 @@ export function usePosterWall() {
 
     setTiles((prev) => new Map(prev).set(filmId, next));
 
-    queueRef.current.set(filmId, {
-      action: next.selected ? "add" : "remove",
+    const change = {
+      action: (next.selected ? "add" : "remove") as "add" | "remove",
       eraLabel: next.selected ? String(activeYear) : null,
       optimisticValue: next,
-    });
+    };
+    queueRef.current.set(filmId, change);
+
+    if (isOfflineRef.current) {
+      queueOfflineChange({
+        id: String(filmId),
+        filmId,
+        action: change.action,
+        eraLabel: change.eraLabel,
+      }).catch(() => {});
+    }
 
     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(10);
   }
@@ -75,6 +144,9 @@ export function usePosterWall() {
   useEffect(() => {
     const interval = setInterval(async () => {
       if (queueRef.current.size === 0) return;
+      // Stay queued in IndexedDB until reconnect — no point attempting
+      // (and no point treating the inevitable failure as a real error).
+      if (isOfflineRef.current) return;
 
       const batch = new Map(queueRef.current);
       queueRef.current.clear();
@@ -93,7 +165,26 @@ export function usePosterWall() {
           body: JSON.stringify({ add, remove }),
         });
         if (!res.ok) throw new Error("flush failed");
+        await clearQueuedChanges([...batch.keys()].map(String)).catch(() => {});
       } catch {
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          // Lost connectivity mid-flush — not a server error. Persist and
+          // put the batch back in the queue for the next reconnect,
+          // never revert the optimistic state.
+          isOfflineRef.current = true;
+          setIsOffline(true);
+          for (const [filmId, change] of batch) {
+            queueOfflineChange({
+              id: String(filmId),
+              filmId,
+              action: change.action,
+              eraLabel: change.eraLabel,
+            }).catch(() => {});
+            queueRef.current.set(filmId, change);
+          }
+          return;
+        }
+
         setTiles((prev) => {
           const next = new Map(prev);
           for (const [filmId, change] of batch) {
@@ -126,5 +217,5 @@ export function usePosterWall() {
     [tiles],
   );
 
-  return { tiles, mergeSeen, toggle, addedCount };
+  return { tiles, mergeSeen, toggle, addedCount, isOffline };
 }

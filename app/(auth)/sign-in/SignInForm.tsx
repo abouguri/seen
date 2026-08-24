@@ -42,7 +42,7 @@ export function SignInForm({ hadCallbackError }: { hadCallbackError: boolean }) 
           <button
             type="button"
             onClick={() => setStatus("idle")}
-            className="text-subhead text-accent mt-4"
+            className="text-subhead text-accent-text mt-4"
           >
             {copy.signIn.resend}
           </button>

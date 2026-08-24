@@ -51,7 +51,7 @@ export function FilterSheet({ open, value, onChange, onClose }: FilterSheetProps
     fetch("/api/library/filters")
       .then((res) => res.json())
       .then(setOptions)
-      .catch(() => setOptions({ decades: [], genres: [], directors: [] }));
+      .catch(() => setOptions({ decades: [], genres: [], directors: [], tags: [] }));
   }, [open, options]);
 
   function apply() {
@@ -112,6 +112,22 @@ export function FilterSheet({ open, value, onChange, onClose }: FilterSheetProps
               label={director}
               active={draft.director === director}
               onClick={() => setDraft((d) => ({ ...d, director }))}
+            />
+          ))}
+        </FilterRow>
+
+        <FilterRow label={copy.library.filter.tag}>
+          <Pill
+            label={copy.library.filter.allTags}
+            active={draft.tag === undefined}
+            onClick={() => setDraft((d) => ({ ...d, tag: undefined }))}
+          />
+          {options?.tags.map((tag) => (
+            <Pill
+              key={tag}
+              label={tag}
+              active={draft.tag === tag}
+              onClick={() => setDraft((d) => ({ ...d, tag }))}
             />
           ))}
         </FilterRow>

@@ -14,8 +14,9 @@ function sleep(ms: number) {
  * genre_ids (resolved eagerly at cache time) — directors need a full
  * detail fetch, which is too expensive to do per-result on every search.
  * Instead this drains films that have never been through a full detail
- * fetch (runtime IS NULL — the same "hasFullDetail" signal from §5's
- * freshness logic), a few at a time, rate-limited by a small delay.
+ * fetch (enriched_at IS NULL), a few at a time, rate-limited by a small
+ * delay. enriched_at — not runtime IS NULL — is the signal: a film with a
+ * genuinely absent runtime in TMDB would otherwise get re-fetched forever.
  *
  * Resumable by construction: each call just picks up whatever's left,
  * there's no separate progress table to get out of sync. Driven two
@@ -30,7 +31,7 @@ export async function enrichBatch(limit: number): Promise<{ processed: number; f
   const { data: films } = await admin
     .from("films")
     .select("id")
-    .is("runtime", null)
+    .is("enriched_at", null)
     .order("popularity", { ascending: false, nullsFirst: false })
     .limit(limit);
 

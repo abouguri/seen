@@ -23,11 +23,14 @@ export async function GET() {
     );
   }
 
-  const { data, error } = await supabase
-    .from("user_films")
-    .select("release_year, genres, directors");
+  const [{ data, error }, { data: tagRows, error: tagError }] = await Promise.all([
+    supabase.from("user_films").select("release_year, genres, directors"),
+    // Only tags actually attached to an entry — same "don't offer a filter
+    // that returns zero films" rule as decade/genre/director above.
+    supabase.from("entry_tags").select("tags(name)"),
+  ]);
 
-  if (error) {
+  if (error || tagError) {
     return NextResponse.json(
       { error: { code: "query_failed", message: copy.errors.libraryLoadFailed } },
       { status: 500 },
@@ -37,17 +40,23 @@ export async function GET() {
   const decades = new Set<number>();
   const genres = new Set<string>();
   const directors = new Set<string>();
+  const tags = new Set<string>();
 
   for (const row of data ?? []) {
     if (row.release_year) decades.add(Math.floor(row.release_year / 10) * 10);
     for (const g of row.genres ?? []) genres.add(g);
     for (const d of row.directors ?? []) directors.add(d);
   }
+  for (const row of tagRows ?? []) {
+    const name = (row.tags as unknown as { name: string } | null)?.name;
+    if (name) tags.add(name);
+  }
 
   const filters: LibraryFilters = {
     decades: [...decades].sort((a, b) => b - a),
     genres: [...genres].sort(),
     directors: [...directors].sort(),
+    tags: [...tags].sort(),
   };
 
   return NextResponse.json(filters);

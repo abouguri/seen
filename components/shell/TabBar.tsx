@@ -45,7 +45,7 @@ export function TabBar() {
                 <span
                   className={clsx(
                     "text-caption",
-                    isAdd ? "sr-only" : active ? "text-accent" : "text-label-2",
+                    isAdd ? "sr-only" : active ? "text-accent-text" : "text-label-2",
                   )}
                 >
                   {label}

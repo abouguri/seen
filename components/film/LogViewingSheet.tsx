@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { StarRating } from "@/components/ui/StarRating";
+import { TagInput } from "@/components/ui/TagInput";
 import { Button } from "@/components/ui/Button";
 import { copy } from "@/lib/copy";
 import type { WatchEntry, WatchPrecision } from "@/lib/types";
@@ -26,6 +27,7 @@ export type LogViewingInput = {
   note: string | null;
   place: string | null;
   company: string | null;
+  tags: string[];
 };
 
 function localTodayIsoDate(): string {
@@ -45,6 +47,7 @@ type FormState = {
   note: string;
   place: string;
   company: string;
+  tags: string[];
 };
 
 function initialStateFor(entry?: WatchEntry): FormState {
@@ -58,6 +61,7 @@ function initialStateFor(entry?: WatchEntry): FormState {
       note: "",
       place: "",
       company: "",
+      tags: [],
     };
   }
 
@@ -82,6 +86,7 @@ function initialStateFor(entry?: WatchEntry): FormState {
     note: entry.note ?? "",
     place: entry.place ?? "",
     company: entry.company ?? "",
+    tags: entry.tags ?? [],
   };
 }
 
@@ -97,7 +102,16 @@ type LogViewingSheetProps = {
 
 export function LogViewingSheet({ open, onClose, onSubmit, initialEntry }: LogViewingSheetProps) {
   const [state, setState] = useState<FormState>(() => initialStateFor(initialEntry));
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const isEditing = Boolean(initialEntry);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/tags")
+      .then((res) => (res.ok ? res.json() : { tags: [] }))
+      .then((data: { tags: string[] }) => setTagSuggestions(data.tags))
+      .catch(() => setTagSuggestions([]));
+  }, [open]);
 
   const canSubmit = state.whenMode !== "pickDate" || state.dateValue.length > 0;
 
@@ -143,6 +157,7 @@ export function LogViewingSheet({ open, onClose, onSubmit, initialEntry }: LogVi
       note: state.note.trim() || null,
       place: state.place.trim() || null,
       company: state.company.trim() || null,
+      tags: state.tags,
     });
 
     if (!isEditing) setState(initialStateFor());
@@ -234,6 +249,15 @@ export function LogViewingSheet({ open, onClose, onSubmit, initialEntry }: LogVi
           />
         </div>
 
+        <div>
+          <p className="text-footnote text-label-2 mb-2">{copy.logViewing.tagsLabel}</p>
+          <TagInput
+            value={state.tags}
+            onChange={(tags) => update("tags", tags)}
+            suggestions={tagSuggestions}
+          />
+        </div>
+
         <MoreFields state={state} update={update} />
 
         <Button type="submit" disabled={!canSubmit} className="w-full">
@@ -255,7 +279,7 @@ function MoreFields({
 
   return (
     <div>
-      <button type="button" onClick={() => setOpen((prev) => !prev)} className="text-footnote text-accent">
+      <button type="button" onClick={() => setOpen((prev) => !prev)} className="text-footnote text-accent-text">
         {copy.logViewing.more}
       </button>
 

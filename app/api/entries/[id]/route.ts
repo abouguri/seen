@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { copy } from "@/lib/copy";
+import { setEntryTags } from "@/lib/tags/resolve";
 import type { WatchEntry } from "@/lib/types";
 
 const patchBodySchema = z.object({
@@ -12,20 +13,24 @@ const patchBodySchema = z.object({
   note: z.string().trim().max(2000).nullable(),
   place: z.string().trim().max(200).nullable(),
   company: z.string().trim().max(200).nullable(),
+  tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 });
 
-function mapRow(data: {
-  id: string;
-  film_id: number;
-  watched_on: string | null;
-  precision: string;
-  era_label: string | null;
-  rating: number | null;
-  note: string | null;
-  place: string | null;
-  company: string | null;
-  created_at: string;
-}): WatchEntry {
+function mapRow(
+  data: {
+    id: string;
+    film_id: number;
+    watched_on: string | null;
+    precision: string;
+    era_label: string | null;
+    rating: number | null;
+    note: string | null;
+    place: string | null;
+    company: string | null;
+    created_at: string;
+  },
+  tags: string[],
+): WatchEntry {
   return {
     id: data.id,
     filmId: data.film_id,
@@ -37,6 +42,7 @@ function mapRow(data: {
     place: data.place,
     company: data.company,
     createdAt: data.created_at,
+    tags,
   };
 }
 
@@ -91,7 +97,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     );
   }
 
-  return NextResponse.json(mapRow(data));
+  let tags: string[] = [];
+  try {
+    tags = await setEntryTags(supabase, data.id, user.id, input.tags);
+  } catch {
+    // The edit itself saved fine — tags are a lesser failure.
+  }
+
+  return NextResponse.json(mapRow(data, tags));
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {

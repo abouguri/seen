@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   SEEN design tokens (AGENT.html §7.1–7.3)
+   Dark is the default appearance; light mode follows the system setting.
+   Everything a component needs — colour, radius, type, material — resolves
+   through one of these variables. No hex values belong in component files.
+   ========================================================================== */
+
+:root {
+  /* Surfaces — true black base, elevated greys (OLED-first, Apple dark mode) */
+  --bg: #000000;
+  --surface-1: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+
+  /* Labels */
+  --label: #ffffff;
+  --label-2: rgba(235, 235, 245, 0.6);
+  --label-3: rgba(235, 235, 245, 0.3);
+  --separator: rgba(84, 84, 88, 0.55);
+
+  /* Accent — Apple system orange (dark). Interactive elements only. */
+  --accent: #ff9f0a;
+  --accent-dim: rgba(255, 159, 10, 0.14);
+  --danger: #ff453a;
+  --good: #30d158;
+  /* Accent is bright in both modes, so text on it stays dark for the
+     4.5:1 contrast floor in §7.7 — not given a value in §7.1's table. */
+  --on-accent: #000000;
+
+  /* Translucent chrome for nav bars, tab bars, materials (§7.3) */
+  --material-chrome: rgba(28, 28, 30, 0.72);
+
+  /* Shape */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  /* Base spacing unit */
+  --space: 4px;
+
+  /* Type — system stack only, no webfont (§7.2) */
+  --font: -apple-system, "SF Pro Text", "SF Pro Display", "Segoe UI", Inter,
+    system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  /* Type scale (§7.2) — size/line-height in rem so Dynamic Type (browser
+     zoom / OS text size) scales the whole scale together. */
+  --fs-large-title: 2.125rem;
+  --lh-large-title: 2.5625rem;
+  --ls-large-title: -0.026em;
+
+  --fs-title-1: 1.75rem;
+  --lh-title-1: 2.125rem;
+  --ls-title-1: -0.024em;
+
+  --fs-title-2: 1.375rem;
+  --lh-title-2: 1.75rem;
+  --ls-title-2: -0.018em;
+
+  --fs-headline: 1.0625rem;
+  --lh-headline: 1.375rem;
+  --ls-headline: -0.024em;
+
+  --fs-body: 1.0625rem;
+  --lh-body: 1.375rem;
+  --ls-body: -0.024em;
+
+  --fs-subhead: 0.9375rem;
+  --lh-subhead: 1.25rem;
+  --ls-subhead: -0.014em;
+
+  --fs-footnote: 0.8125rem;
+  --lh-footnote: 1.125rem;
+  --ls-footnote: -0.006em;
+
+  --fs-caption: 0.75rem;
+  --lh-caption: 1rem;
+  --ls-caption: 0em;
+}
+
+/* Light mode follows the system setting. Values not given explicitly in
+   §7.1's table (surface-3, accent-dim) are derived from Apple's HIG light
+   palette / the same alpha ratio as their dark counterparts. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --surface-1: #f2f2f7;
+    --surface-2: #e5e5ea;
+    --surface-3: #d1d1d6;
+
+    --label: #000000;
+    --label-2: rgba(60, 60, 67, 0.6);
+    --label-3: rgba(60, 60, 67, 0.3);
+    --separator: rgba(60, 60, 67, 0.29);
+
+    --accent: #ff9500;
+    --accent-dim: rgba(255, 149, 0, 0.14);
+
+    --material-chrome: rgba(242, 242, 247, 0.72);
+  }
+}
+
+/* Tailwind v4 CSS-first theme — maps tokens onto utility classes so
+   components write `bg-surface-1`, `text-label-2`, `rounded-md`, etc.
+   instead of arbitrary values. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-label: var(--label);
+  --color-label-2: var(--label-2);
+  --color-label-3: var(--label-3);
+  --color-separator: var(--separator);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-danger: var(--danger);
+  --color-good: var(--good);
+  --color-on-accent: var(--on-accent);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+
+  --font-sans: var(--font);
+  --font-mono: var(--mono);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--label);
+    font-family: var(--font);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    letter-spacing: var(--ls-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Visible focus rings everywhere — never outline: none without this. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Type scale utilities (§7.2). Apply one per text role instead of
+     hand-rolling font-size/weight/tracking in component files. */
+  .text-large-title {
+    font-size: var(--fs-large-title);
+    line-height: var(--lh-large-title);
+    letter-spacing: var(--ls-large-title);
+    font-weight: 700;
+  }
+  .text-title-1 {
+    font-size: var(--fs-title-1);
+    line-height: var(--lh-title-1);
+    letter-spacing: var(--ls-title-1);
+    font-weight: 700;
+  }
+  .text-title-2 {
+    font-size: var(--fs-title-2);
+    line-height: var(--lh-title-2);
+    letter-spacing: var(--ls-title-2);
+    font-weight: 600;
+  }
+  .text-headline {
+    font-size: var(--fs-headline);
+    line-height: var(--lh-headline);
+    letter-spacing: var(--ls-headline);
+    font-weight: 600;
+  }
+  .text-body {
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    letter-spacing: var(--ls-body);
+    font-weight: 400;
+  }
+  .text-subhead {
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-subhead);
+    letter-spacing: var(--ls-subhead);
+    font-weight: 400;
+  }
+  .text-footnote {
+    font-size: var(--fs-footnote);
+    line-height: var(--lh-footnote);
+    letter-spacing: var(--ls-footnote);
+    font-weight: 400;
+  }
+  .text-caption {
+    font-size: var(--fs-caption);
+    line-height: var(--lh-caption);
+    letter-spacing: var(--ls-caption);
+    font-weight: 400;
+  }
+
+  /* Translucent material (§7.3) for nav bars, tab bars, floating action
+     bars. Content must stay visible scrolling underneath. */
+  .material-chrome {
+    background: var(--material-chrome);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* Progressive-enhancement squircle corners; standard radius is the
+     fallback wherever corner-shape isn't supported yet. */
+  .squircle {
+    corner-shape: squircle;
+  }
+}
+
+/* prefers-reduced-motion: every transform-based animation collapses to a
+   120ms opacity fade instead. No exceptions (§7.4, DoD §11). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity !important;
+    transition-duration: 120ms !important;
+    scroll-behavior: auto !important;
+  }
+}

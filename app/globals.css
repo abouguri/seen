@@ -32,6 +32,13 @@
   /* Translucent chrome for nav bars, tab bars, materials (§7.3) */
   --material-chrome: rgba(28, 28, 30, 0.72);
 
+  /* Backdrop/scrim colour for sheet dims and poster-title legibility
+     gradients — a solid token (not a pre-mixed rgba) so Tailwind's
+     opacity modifiers (scrim/40, scrim/80) work on it. Stays black in
+     both modes: dimming a backdrop or scrimming text over a poster is a
+     media-legibility convention, not part of the surface palette. */
+  --scrim: #000000;
+
   /* Shape */
   --r-sm: 10px;
   --r-md: 14px;
@@ -120,6 +127,7 @@
   --color-danger: var(--danger);
   --color-good: var(--good);
   --color-on-accent: var(--on-accent);
+  --color-scrim: var(--scrim);
 
   --radius-sm: var(--r-sm);
   --radius-md: var(--r-md);

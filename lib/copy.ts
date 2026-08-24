@@ -31,7 +31,6 @@ export const copy = {
       "Nothing here yet. Tap Add and start with a decade you remember well.",
   },
   placeholder: {
-    add: "Add isn't built yet — it lands in a later milestone.",
     stats: "Stats isn't built yet — it lands in a later milestone.",
   },
   account: {
@@ -44,6 +43,7 @@ export const copy = {
     invalidQuery: "Type a title to search.",
     filmNotFound: "Couldn't find that film.",
     entrySaveFailed: "Couldn't save that viewing. Check your connection and try again.",
+    retry: "Try again",
   },
   search: {
     title: "Search",
@@ -82,5 +82,11 @@ export const copy = {
     submit: "Log a viewing",
     saving: "Saving…",
     close: "Close",
+  },
+  wall: {
+    title: "Add films",
+    done: "Done",
+    noResults: "No films found for this year.",
+    addedCount: (n: number) => `${n} film${n === 1 ? "" : "s"} added`,
   },
 } as const;

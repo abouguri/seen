@@ -61,7 +61,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduceMotion ? 0.12 : 0.2 }}
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-scrim/40"
             onClick={onClose}
             aria-hidden="true"
           />

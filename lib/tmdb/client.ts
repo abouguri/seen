@@ -35,6 +35,31 @@ export async function searchTmdbMovies(query: string): Promise<TmdbSearchResult[
   return data.results;
 }
 
+/**
+ * Discover results share TMDB's movie-summary shape with search, so they
+ * reuse TmdbSearchResult/TmdbSearchResponse rather than a parallel type.
+ * Cached the same way as search (§5) — the poster wall re-fetching the
+ * same year+page is extremely common (re-visiting a year).
+ */
+export async function discoverTmdbMoviesByYear(
+  year: number,
+  page: number,
+): Promise<TmdbSearchResult[]> {
+  const url = `${TMDB_BASE}/discover/movie?sort_by=popularity.desc&primary_release_year=${year}&page=${page}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: 86400 },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB discover failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbSearchResponse;
+  return data.results;
+}
+
 export async function fetchTmdbMovieDetail(id: number): Promise<TmdbMovieDetail> {
   const url = `${TMDB_BASE}/movie/${id}?append_to_response=credits`;
 

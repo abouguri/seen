@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { copy } from "@/lib/copy";
 import type { WatchEntry } from "@/lib/types";
@@ -15,6 +16,18 @@ const bodySchema = z.object({
   company: z.string().trim().max(200).nullable(),
 });
 
+// Poster wall (§6.2): era_label is always the 4-digit year that was
+// active when the tile was tapped.
+const bulkBodySchema = z.object({
+  add: z.array(
+    z.object({
+      filmId: z.number().int().positive(),
+      eraLabel: z.string().regex(/^\d{4}$/),
+    }),
+  ),
+  remove: z.array(z.number().int().positive()),
+});
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -28,6 +41,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get("bulk") === "1") {
+    return handleBulk(request, supabase, user);
+  }
+  return handleSingle(request, supabase, user);
+}
+
+async function handleSingle(request: Request, supabase: SupabaseClient, user: User) {
   const json = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
@@ -77,4 +98,64 @@ export async function POST(request: Request) {
   };
 
   return NextResponse.json(entry, { status: 201 });
+}
+
+async function handleBulk(request: Request, supabase: SupabaseClient, user: User) {
+  const json = await request.json().catch(() => null);
+  const parsed = bulkBodySchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: { code: "invalid_body", message: copy.errors.entrySaveFailed } },
+      { status: 400 },
+    );
+  }
+
+  const { add, remove } = parsed.data;
+  let added = 0;
+  let removed = 0;
+
+  if (add.length > 0) {
+    const filmIds = add.map((a) => a.filmId);
+    // Idempotency (§6.2: re-visiting a year must not duplicate entries):
+    // filter out films that already have a poster_wall row for this user
+    // before inserting. The partial unique index is the backstop for the
+    // race window between this check and the insert below.
+    const { data: existing } = await supabase
+      .from("watch_entries")
+      .select("film_id")
+      .eq("user_id", user.id)
+      .eq("source", "poster_wall")
+      .in("film_id", filmIds);
+
+    const existingIds = new Set((existing ?? []).map((row) => row.film_id));
+    const toInsert = add.filter((a) => !existingIds.has(a.filmId));
+
+    if (toInsert.length > 0) {
+      const rows = toInsert.map(({ filmId, eraLabel }) => ({
+        user_id: user.id,
+        film_id: filmId,
+        watched_on: null,
+        precision: "era" as const,
+        era_label: eraLabel,
+        source: "poster_wall" as const,
+      }));
+      const { error, count } = await supabase
+        .from("watch_entries")
+        .insert(rows, { count: "exact" });
+      if (!error) added = count ?? toInsert.length;
+    }
+  }
+
+  if (remove.length > 0) {
+    const { data, error } = await supabase
+      .from("watch_entries")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("source", "poster_wall")
+      .in("film_id", remove)
+      .select("id");
+    if (!error) removed = (data ?? []).length;
+  }
+
+  return NextResponse.json({ added, removed });
 }

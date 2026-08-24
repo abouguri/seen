@@ -1,32 +1,268 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { LibraryTile } from "@/components/library/LibraryTile";
+import { ContextMenu, type ContextMenuItem } from "@/components/library/ContextMenu";
+import { SortSheet } from "@/components/library/SortSheet";
+import { FilterSheet } from "@/components/library/FilterSheet";
+import { useLibraryData, type LibraryFilterState } from "@/components/library/useLibraryData";
+import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
+import { useCollapsingHeader, StickyInlineBar, LargeTitle } from "@/components/library/CollapsingHeader";
+import { LogViewingSheet, type LogViewingInput } from "@/components/film/LogViewingSheet";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
+import type { LibraryFilm, LibrarySort } from "@/lib/types";
 
-export default async function LibraryPage() {
-  const supabase = await createClient();
+const GAP_PX = 8;
+const VIRTUALIZE_THRESHOLD = 300;
 
-  const [{ count: viewingCount }, { data: films }] = await Promise.all([
-    supabase.from("watch_entries").select("*", { count: "exact", head: true }),
-    supabase.from("user_films").select("id"),
-  ]);
+export default function LibraryPage() {
+  const router = useRouter();
+  const [sort, setSort] = useState<LibrarySort>("recent_added");
+  const [filters, setFilters] = useState<LibraryFilterState>({});
+  const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [menu, setMenu] = useState<{ film: LibraryFilm; x: number; y: number } | null>(null);
+  const [logFilm, setLogFilm] = useState<LibraryFilm | null>(null);
+  const [removeFilm, setRemoveFilm] = useState<LibraryFilm | null>(null);
 
-  const filmCount = films?.length ?? 0;
+  const { films, total, loading, error, loadMore, reload, removeFilm: removeFilmFromList } =
+    useLibraryData(sort, filters);
+  const { showToast } = useToast();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useCollapsingHeader(scrollRef, barRef, titleRef);
+
+  const { columns, containerWidth } = useResponsiveColumns(gridRef);
+  const tileWidth = columns > 0 ? (containerWidth - GAP_PX * (columns - 1)) / columns : 0;
+  const rowHeight = tileWidth > 0 ? tileWidth * 1.5 + GAP_PX : 200;
+  const rowCount = Math.ceil(films.length / columns);
+  const shouldVirtualize = films.length > VIRTUALIZE_THRESHOLD;
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => rowHeight,
+    overscan: 4,
+    enabled: shouldVirtualize,
+  });
+
+  // Recompute row measurements when the tile size changes (resize/columns).
+  useEffect(() => {
+    virtualizer.measure();
+  }, [rowHeight, virtualizer]);
+
+  const virtualRows = shouldVirtualize ? virtualizer.getVirtualItems() : null;
+
+  // Infinite pagination — trigger the next page when scrolled near the
+  // end, whether virtualized or not.
+  useEffect(() => {
+    const lastVisibleRow = virtualRows
+      ? (virtualRows[virtualRows.length - 1]?.index ?? 0)
+      : rowCount - 1;
+    if (lastVisibleRow >= rowCount - 3) {
+      loadMore();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [virtualRows, rowCount]);
+
+  function handleScroll() {
+    if (!shouldVirtualize) return;
+    const lastVisibleRow = virtualizer.getVirtualItems().at(-1)?.index ?? 0;
+    if (lastVisibleRow >= rowCount - 3) loadMore();
+  }
+
+  const logMutation = useMutation({
+    mutationFn: async (input: LogViewingInput & { filmId: number }) => {
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) throw new Error(copy.errors.entrySaveFailed);
+      return res.json();
+    },
+    onError: () => showToast(copy.errors.entrySaveFailed),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (filmId: number) => {
+      const res = await fetch(`/api/library/${filmId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(copy.errors.entrySaveFailed);
+      return res.json();
+    },
+    onMutate: async (filmId: number) => {
+      removeFilmFromList(filmId);
+    },
+    onError: () => {
+      showToast(copy.errors.entrySaveFailed);
+      reload();
+    },
+  });
+
+  const menuItems: ContextMenuItem[] = menu
+    ? [
+        {
+          label: copy.library.contextMenu.logAnother,
+          onSelect: () => setLogFilm(menu.film),
+        },
+        {
+          label: copy.library.contextMenu.edit,
+          onSelect: () => router.push(`/film/${menu.film.id}`),
+        },
+        {
+          label: copy.library.contextMenu.remove,
+          onSelect: () => setRemoveFilm(menu.film),
+          destructive: true,
+        },
+      ]
+    : [];
+
+  const rows = useMemo(() => {
+    const result: LibraryFilm[][] = [];
+    for (let i = 0; i < films.length; i += columns) {
+      result.push(films.slice(i, i + columns));
+    }
+    return result;
+  }, [films, columns]);
+
+  const isEmpty = !loading && films.length === 0;
+  const hasActiveFilters = Object.keys(filters).length > 0;
 
   return (
-    <div className="flex flex-1 flex-col px-4 pt-6 pb-8 md:px-8 md:pt-10">
-      <header className="mb-8">
-        <h1 className="text-large-title">{copy.library.title}</h1>
-        <p className="text-subhead text-label-2 mt-1">
-          {filmCount} films · {viewingCount ?? 0} viewings
-        </p>
-      </header>
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      <StickyInlineBar ref={barRef} title={copy.library.title} />
 
-      {filmCount === 0 ? (
-        <div className="flex flex-1 items-center justify-center">
-          <p className="text-body text-label-2 max-w-[32ch] text-center">
-            {copy.library.emptyMessage}
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
+        <LargeTitle ref={titleRef} title={copy.library.title} />
+
+        <div className="flex items-center justify-between px-4 pb-4 md:px-8">
+          <p className="text-subhead text-label-2">
+            {total} film{total === 1 ? "" : "s"}
           </p>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setSortOpen(true)}>
+              {copy.library.sortLabel}
+            </Button>
+            <Button variant="secondary" onClick={() => setFilterOpen(true)}>
+              {copy.library.filterLabel}
+              {hasActiveFilters ? " •" : ""}
+            </Button>
+          </div>
         </div>
-      ) : null}
+
+        {error && films.length === 0 && (
+          <div className="mt-8 flex flex-col items-center gap-4 px-4 text-center">
+            <p className="text-body text-danger max-w-[32ch]">{copy.errors.libraryLoadFailed}</p>
+            <Button variant="secondary" onClick={reload}>
+              {copy.errors.retry}
+            </Button>
+          </div>
+        )}
+
+        {isEmpty && !error && (
+          <p className="text-body text-label-2 mt-8 px-4 text-center">
+            {hasActiveFilters ? copy.library.noResultsForFilter : copy.library.emptyMessage}
+          </p>
+        )}
+
+        <div ref={gridRef} className="px-4 md:px-8">
+          {shouldVirtualize ? (
+            <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+              {virtualizer.getVirtualItems().map((virtualRow) => (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: virtualRow.size,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div
+                    className="grid gap-2"
+                    style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+                  >
+                    {rows[virtualRow.index]?.map((film) => (
+                      <LibraryTile
+                        key={film.id}
+                        film={film}
+                        onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+            >
+              {films.map((film) => (
+                <LibraryTile
+                  key={film.id}
+                  film={film}
+                  onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="h-8" />
+      </div>
+
+      {menu && (
+        <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
+      )}
+
+      <SortSheet
+        open={sortOpen}
+        value={sort}
+        onChange={setSort}
+        onClose={() => setSortOpen(false)}
+      />
+      <FilterSheet
+        open={filterOpen}
+        value={filters}
+        onChange={setFilters}
+        onClose={() => setFilterOpen(false)}
+      />
+
+      {logFilm && (
+        <LogViewingSheet
+          key={logFilm.id}
+          open={Boolean(logFilm)}
+          onClose={() => setLogFilm(null)}
+          onSubmit={(input) => {
+            logMutation.mutate({ ...input, filmId: logFilm.id });
+            setLogFilm(null);
+          }}
+        />
+      )}
+
+      <ConfirmSheet
+        open={Boolean(removeFilm)}
+        title={
+          removeFilm ? copy.library.removeConfirmTitle(removeFilm.title, removeFilm.watchCount) : ""
+        }
+        body={copy.library.removeConfirmBody}
+        confirmLabel={copy.library.removeAction}
+        onConfirm={() => removeFilm && removeMutation.mutate(removeFilm.id)}
+        onClose={() => setRemoveFilm(null)}
+      />
     </div>
   );
 }

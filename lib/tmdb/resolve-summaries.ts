@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { upsertFilmSummary } from "@/lib/tmdb/cache";
 import { toFilmSummary } from "@/lib/tmdb/summaries";
-import { buildSeenMap } from "@/lib/seen";
+import { buildSeenMap, buildPosterWallSet } from "@/lib/seen";
 import type { TmdbSearchResult } from "@/lib/tmdb/raw-types";
 import type { FilmSummary } from "@/lib/types";
 
@@ -22,10 +22,13 @@ export async function resolveFilmSummaries(
   const filmIds = movies.map((movie) => movie.id);
   const { data: entries } = await supabase
     .from("watch_entries")
-    .select("film_id, watched_on, precision, era_label, created_at")
+    .select("film_id, watched_on, precision, era_label, created_at, source")
     .in("film_id", filmIds.length ? filmIds : [-1]);
 
   const seenMap = buildSeenMap(entries ?? []);
+  const posterWallSet = buildPosterWallSet(entries ?? []);
 
-  return movies.map((movie) => toFilmSummary(movie, seenMap.get(movie.id)));
+  return movies.map((movie) =>
+    toFilmSummary(movie, seenMap.get(movie.id), posterWallSet.has(movie.id)),
+  );
 }

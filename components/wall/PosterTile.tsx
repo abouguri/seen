@@ -14,6 +14,10 @@ const LONG_PRESS_MS = 500;
 type PosterTileProps = {
   film: FilmSummary;
   selected: boolean;
+  /** False when seen only via a manual/import entry — the checkmark is
+   *  shown but muted, and the tile doesn't respond to taps (§9: the wall
+   *  never deletes an entry it didn't create). */
+  removable: boolean;
   onToggle: (filmId: number) => void;
 };
 
@@ -23,7 +27,7 @@ type PosterTileProps = {
  * press-down scale, and one light haptic. Titles are hidden by default —
  * hover reveals them on desktop, long-press on touch.
  */
-export function PosterTile({ film, selected, onToggle }: PosterTileProps) {
+export function PosterTile({ film, selected, removable, onToggle }: PosterTileProps) {
   const reduceMotion = useReducedMotion();
   const [showTitleTouch, setShowTitleTouch] = useState(false);
   const isLongPress = useRef(false);
@@ -31,6 +35,7 @@ export function PosterTile({ film, selected, onToggle }: PosterTileProps) {
 
   const url = posterUrl(film.posterPath, "w342");
   const alt = `${film.title} (${film.year ?? "unknown year"}) poster`;
+  const interactive = !selected || removable;
 
   function handlePointerDown(event: React.PointerEvent) {
     if (event.pointerType !== "touch") return;
@@ -51,6 +56,7 @@ export function PosterTile({ film, selected, onToggle }: PosterTileProps) {
       isLongPress.current = false;
       return;
     }
+    if (!interactive) return;
     if (navigator.vibrate) navigator.vibrate(10);
     onToggle(film.id);
   }
@@ -59,13 +65,14 @@ export function PosterTile({ film, selected, onToggle }: PosterTileProps) {
     <motion.button
       type="button"
       aria-pressed={selected}
+      aria-disabled={!interactive}
       aria-label={`${film.title}${selected ? ", seen" : ""}`}
       onPointerDown={handlePointerDown}
       onPointerUp={clearLongPress}
       onPointerLeave={clearLongPress}
       onPointerCancel={clearLongPress}
       onClick={handleClick}
-      whileTap={{ scale: reduceMotion ? 1 : 0.96 }}
+      whileTap={{ scale: reduceMotion || !interactive ? 1 : 0.96 }}
       transition={SPRING}
       className="group focus-visible:outline-accent relative aspect-[2/3] w-full overflow-hidden rounded-md outline-offset-2"
     >
@@ -95,9 +102,12 @@ export function PosterTile({ film, selected, onToggle }: PosterTileProps) {
             animate={reduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { scale: 0, opacity: 0 }}
             transition={reduceMotion ? { duration: 0.12 } : SPRING}
-            className="bg-accent absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full"
+            className={clsx(
+              "absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full",
+              removable ? "bg-accent" : "bg-surface-3",
+            )}
           >
-            <Check size={14} strokeWidth={3} className="text-on-accent" />
+            <Check size={14} strokeWidth={3} className={removable ? "text-on-accent" : "text-label-2"} />
           </motion.div>
         )}
       </AnimatePresence>

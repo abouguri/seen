@@ -9,11 +9,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
       <ToastProvider>
-        <div className="flex min-h-dvh flex-col md:flex-row">
+        <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
           <Sidebar />
-          <div className="flex flex-1 flex-col md:pl-60">
+          <div className="flex flex-1 flex-col overflow-hidden md:pl-60">
             <MobileHeader />
-            <main className="flex flex-1 flex-col pb-16 md:pb-0">{children}</main>
+            <main className="flex flex-1 flex-col overflow-y-auto pb-16 md:pb-0">{children}</main>
           </div>
           <TabBar />
         </div>

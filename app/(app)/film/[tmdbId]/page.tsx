@@ -71,7 +71,10 @@ export default async function FilmDetailPage({
         )}
 
         <div className="relative -mt-16 flex gap-4 px-4 md:px-8">
-          <div className="bg-surface-2 aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-md md:w-36">
+          <div
+            className="bg-surface-2 aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-md md:w-36"
+            style={{ viewTransitionName: "shared-poster" } as React.CSSProperties}
+          >
             {poster ? (
               <Image
                 src={poster}

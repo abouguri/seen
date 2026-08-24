@@ -7,6 +7,7 @@ type EntryRow = {
   precision: string;
   era_label: string | null;
   created_at: string;
+  source: string;
 };
 
 export type SeenInfo = {
@@ -52,4 +53,13 @@ export function buildSeenMap(entries: EntryRow[]): Map<number, SeenInfo> {
     });
   }
   return result;
+}
+
+/** Film ids that have at least one source='poster_wall' row for this user. */
+export function buildPosterWallSet(entries: EntryRow[]): Set<number> {
+  const set = new Set<number>();
+  for (const entry of entries) {
+    if (entry.source === "poster_wall") set.add(entry.film_id);
+  }
+  return set;
 }

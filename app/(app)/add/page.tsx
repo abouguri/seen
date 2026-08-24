@@ -36,7 +36,7 @@ export default function AddPage() {
   const [error, setError] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const { selected, mergeSeen, toggle, addedCount } = usePosterWall();
+  const { tiles, mergeSeen, toggle, addedCount } = usePosterWall();
   const { showToast } = useToast();
 
   const loadFirstPage = useCallback((forYear: number) => {
@@ -129,14 +129,21 @@ export default function AddPage() {
       ) : (
         <>
           <div className="grid grid-cols-3 gap-2 px-4 pt-4 sm:grid-cols-4 md:px-8 lg:grid-cols-6 xl:grid-cols-8">
-            {films.map((film) => (
-              <PosterTile
-                key={film.id}
-                film={film}
-                selected={selected.get(film.id) ?? film.seen}
-                onToggle={(filmId) => toggle(filmId, year)}
-              />
-            ))}
+            {films.map((film) => {
+              const tile = tiles.get(film.id) ?? {
+                selected: film.seen,
+                removable: film.hasPosterWallEntry,
+              };
+              return (
+                <PosterTile
+                  key={film.id}
+                  film={film}
+                  selected={tile.selected}
+                  removable={tile.removable}
+                  onToggle={(filmId) => toggle(filmId, year)}
+                />
+              );
+            })}
             {loading &&
               Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                 <SkeletonTile key={`skeleton-${i}`} />

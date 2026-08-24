@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { LogViewingSheet, type LogViewingInput } from "@/components/film/LogViewingSheet";
 import { useToast } from "@/components/ui/Toast";
 import { formatWatchedDate } from "@/lib/dates";
@@ -17,6 +19,8 @@ type ViewingHistoryProps = {
 
 export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<WatchEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<WatchEntry | null>(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const queryKey = ["watch-entries", filmId];
@@ -28,7 +32,7 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
     staleTime: Infinity,
   });
 
-  const mutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: async (input: LogViewingInput): Promise<WatchEntry> => {
       const res = await fetch("/api/entries", {
         method: "POST",
@@ -75,6 +79,61 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: LogViewingInput }): Promise<WatchEntry> => {
+      const res = await fetch(`/api/entries/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
+        throw new Error(body?.error?.message ?? copy.errors.entrySaveFailed);
+      }
+      return (await res.json()) as WatchEntry;
+    },
+    onMutate: async ({ id, input }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<WatchEntry[]>(queryKey) ?? [];
+      queryClient.setQueryData<WatchEntry[]>(queryKey, (current = []) =>
+        current.map((entry) => (entry.id === id ? { ...entry, ...input } : entry)),
+      );
+      setEditingEntry(null);
+      return { previous };
+    },
+    onError: (err, _vars, context) => {
+      if (context) queryClient.setQueryData(queryKey, context.previous);
+      showToast(err instanceof Error ? err.message : copy.errors.entrySaveFailed);
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<WatchEntry[]>(queryKey, (current = []) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry)),
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/entries/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(copy.errors.entrySaveFailed);
+    },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<WatchEntry[]>(queryKey) ?? [];
+      queryClient.setQueryData<WatchEntry[]>(
+        queryKey,
+        previous.filter((entry) => entry.id !== id),
+      );
+      return { previous };
+    },
+    onError: (err, _id, context) => {
+      if (context) queryClient.setQueryData(queryKey, context.previous);
+      showToast(err instanceof Error ? err.message : copy.errors.entrySaveFailed);
+    },
+  });
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -87,26 +146,60 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
       ) : (
         <ul className="flex flex-col gap-4">
           {entries.map((entry) => (
-            <li key={entry.id} className="border-separator border-b pb-4 last:border-0">
-              <div className="flex items-center gap-3">
-                <p className="text-headline">{formatWatchedDate(entry)}</p>
-                {entry.rating !== null && <Stars value={entry.rating} size={14} />}
-              </div>
-              {entry.note && <p className="text-body text-label-2 mt-1">{entry.note}</p>}
-              {(entry.place || entry.company) && (
-                <p className="text-footnote text-label-2 mt-1">
-                  {[entry.place, entry.company].filter(Boolean).join(" · ")}
-                </p>
-              )}
+            <li key={entry.id} className="border-separator group flex items-start gap-2 border-b pb-4 last:border-0">
+              <button
+                type="button"
+                onClick={() => setEditingEntry(entry)}
+                className="min-w-0 flex-1 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <p className="text-headline">{formatWatchedDate(entry)}</p>
+                  {entry.rating !== null && <Stars value={entry.rating} size={14} />}
+                </div>
+                {entry.note && <p className="text-body text-label-2 mt-1">{entry.note}</p>}
+                {(entry.place || entry.company) && (
+                  <p className="text-footnote text-label-2 mt-1">
+                    {[entry.place, entry.company].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeletingEntry(entry)}
+                aria-label={copy.film.deleteViewing}
+                className="text-label-2 hover:text-danger flex h-11 w-11 shrink-0 items-center justify-center"
+              >
+                <Trash2 size={16} strokeWidth={2} />
+              </button>
             </li>
           ))}
         </ul>
       )}
 
       <LogViewingSheet
+        key="create"
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onSubmit={(input) => mutation.mutate(input)}
+        onSubmit={(input) => createMutation.mutate(input)}
+      />
+
+      {editingEntry && (
+        <LogViewingSheet
+          key={editingEntry.id}
+          open={Boolean(editingEntry)}
+          initialEntry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSubmit={(input) => editMutation.mutate({ id: editingEntry.id, input })}
+        />
+      )}
+
+      <ConfirmSheet
+        open={Boolean(deletingEntry)}
+        title={copy.film.deleteViewing}
+        body={copy.film.deleteViewingConfirm}
+        confirmLabel={copy.film.deleteViewing}
+        onConfirm={() => deletingEntry && deleteMutation.mutate(deletingEntry.id)}
+        onClose={() => setDeletingEntry(null)}
       />
     </div>
   );

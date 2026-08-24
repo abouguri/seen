@@ -4,7 +4,11 @@ import type { SeenInfo } from "@/lib/seen";
 import type { FilmSummary } from "@/lib/types";
 
 /** Shared by search and discover — both return the same TMDB movie shape. */
-export function toFilmSummary(movie: TmdbSearchResult, seen: SeenInfo | undefined): FilmSummary {
+export function toFilmSummary(
+  movie: TmdbSearchResult,
+  seen: SeenInfo | undefined,
+  hasPosterWallEntry: boolean,
+): FilmSummary {
   return {
     id: movie.id,
     title: movie.title,
@@ -14,5 +18,6 @@ export function toFilmSummary(movie: TmdbSearchResult, seen: SeenInfo | undefine
     lastWatchedOn: seen?.watchedOn ?? null,
     lastWatchedPrecision: seen?.precision ?? null,
     lastWatchedEraLabel: seen?.eraLabel ?? null,
+    hasPosterWallEntry,
   };
 }

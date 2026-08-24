@@ -1,18 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
 
 const FLUSH_INTERVAL_MS = 400;
 
+export type TileState = {
+  selected: boolean;
+  /** Can this tile be toggled off? Only true for the wall's own
+   *  source='poster_wall' rows — a film seen via a manual/import entry
+   *  renders selected but must never be removed by a wall tap (§9): the
+   *  wall may only ever delete an entry it created itself. */
+  removable: boolean;
+};
+
 type PendingChange = {
   action: "add" | "remove";
   eraLabel: string | null;
-  /** What we optimistically set `selected` to when this was queued — lets
-   *  a failed revert check whether a newer tap has already superseded it,
-   *  instead of blindly clobbering the current (possibly newer) state. */
-  optimisticValue: boolean;
+  /** What we optimistically set this tile to when queued — lets a failed
+   *  revert check whether a newer tap has already superseded it, instead
+   *  of blindly clobbering the current (possibly newer) state. */
+  optimisticValue: TileState;
 };
 
 /**
@@ -23,17 +32,17 @@ type PendingChange = {
  * silently dropped without surfacing a toast.
  */
 export function usePosterWall() {
-  const [selected, setSelected] = useState<Map<number, boolean>>(new Map());
+  const [tiles, setTiles] = useState<Map<number, TileState>>(new Map());
   const queueRef = useRef<Map<number, PendingChange>>(new Map());
   const { showToast } = useToast();
 
-  function mergeSeen(films: { id: number; seen: boolean }[]) {
-    setSelected((prev) => {
+  function mergeSeen(films: { id: number; seen: boolean; hasPosterWallEntry: boolean }[]) {
+    setTiles((prev) => {
       let changed = false;
       const next = new Map(prev);
       for (const film of films) {
         if (!next.has(film.id)) {
-          next.set(film.id, film.seen);
+          next.set(film.id, { selected: film.seen, removable: film.hasPosterWallEntry });
           changed = true;
         }
       }
@@ -42,19 +51,22 @@ export function usePosterWall() {
   }
 
   function toggle(filmId: number, activeYear: number) {
-    const wasSelected = selected.get(filmId) ?? false;
-    const nowSelected = !wasSelected;
+    const current = tiles.get(filmId) ?? { selected: false, removable: false };
 
-    setSelected((prev) => {
-      const next = new Map(prev);
-      next.set(filmId, nowSelected);
-      return next;
-    });
+    // Seen via a manual/import entry, not the wall — tapping is a no-op
+    // (§9): the wall never deletes an entry it didn't create.
+    if (current.selected && !current.removable) return;
+
+    const next: TileState = current.selected
+      ? { selected: false, removable: false }
+      : { selected: true, removable: true };
+
+    setTiles((prev) => new Map(prev).set(filmId, next));
 
     queueRef.current.set(filmId, {
-      action: nowSelected ? "add" : "remove",
-      eraLabel: nowSelected ? String(activeYear) : null,
-      optimisticValue: nowSelected,
+      action: next.selected ? "add" : "remove",
+      eraLabel: next.selected ? String(activeYear) : null,
+      optimisticValue: next,
     });
 
     if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(10);
@@ -82,14 +94,22 @@ export function usePosterWall() {
         });
         if (!res.ok) throw new Error("flush failed");
       } catch {
-        setSelected((prev) => {
+        setTiles((prev) => {
           const next = new Map(prev);
           for (const [filmId, change] of batch) {
+            const current = next.get(filmId);
             // Only revert if nothing newer already changed this tile —
             // otherwise a stale revert would clobber a later, in-flight
             // (or already-succeeded) toggle.
-            if (next.get(filmId) === change.optimisticValue) {
-              next.set(filmId, !change.optimisticValue);
+            if (
+              current &&
+              current.selected === change.optimisticValue.selected &&
+              current.removable === change.optimisticValue.removable
+            ) {
+              next.set(filmId, {
+                selected: !change.optimisticValue.selected,
+                removable: !change.optimisticValue.selected,
+              });
             }
           }
           return next;
@@ -102,9 +122,9 @@ export function usePosterWall() {
   }, [showToast]);
 
   const addedCount = useMemo(
-    () => [...selected.values()].filter(Boolean).length,
-    [selected],
+    () => [...tiles.values()].filter((t) => t.selected && t.removable).length,
+    [tiles],
   );
 
-  return { selected, mergeSeen, toggle, addedCount };
+  return { tiles, mergeSeen, toggle, addedCount };
 }

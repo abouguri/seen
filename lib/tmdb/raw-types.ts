@@ -9,6 +9,8 @@ export type TmdbSearchResult = {
   overview?: string | null;
   vote_average?: number | null;
   popularity?: number | null;
+  /** Search/discover give ids, not resolved names — see lib/tmdb/genres.ts. */
+  genre_ids?: number[];
 };
 
 export type TmdbSearchResponse = {

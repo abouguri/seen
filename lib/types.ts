@@ -47,6 +47,46 @@ export type LibraryFilters = {
   directors: string[];
 };
 
+export type ImportSource = "letterboxd" | "imdb" | "seen_export";
+
+/** One row from a parsed import file, normalised to a common shape
+ *  regardless of source format. */
+export type NormalizedImportRow = {
+  rowIndex: number;
+  title: string;
+  year: number | null;
+  watchedOn: string | null;
+  rating: number | null;
+  /** Only present for our own JSON export re-import — skips matching
+   *  entirely since the film id is already known, and these carry the
+   *  fields CSV formats have no column for, preserved for exact re-import. */
+  filmId?: number;
+  precision?: WatchPrecision;
+  eraLabel?: string | null;
+  note?: string | null;
+  place?: string | null;
+  company?: string | null;
+};
+
+export type ImportCandidate = {
+  filmId: number;
+  title: string;
+  year: number | null;
+  posterPath: string | null;
+};
+
+export type ImportMatchStatus = "matched" | "ambiguous" | "unmatched";
+
+export type ImportMatchResult = {
+  rowIndex: number;
+  status: ImportMatchStatus;
+  row: NormalizedImportRow;
+  /** Set when status is "matched" (auto) or once the user picks one for
+   *  an "ambiguous" row. */
+  filmId: number | null;
+  candidates: ImportCandidate[];
+};
+
 export type WatchEntry = {
   id: string;
   filmId: number;
@@ -58,4 +98,25 @@ export type WatchEntry = {
   place: string | null;
   company: string | null;
   createdAt: string;
+};
+
+/** Full-fidelity export shape (§6.9) — also the format re-imported for
+ *  the JSON round trip, since only this format can preserve precision. */
+export type SeenExportEntry = {
+  filmId: number;
+  title: string;
+  year: number | null;
+  watchedOn: string | null;
+  precision: WatchPrecision;
+  eraLabel: string | null;
+  rating: number | null;
+  note: string | null;
+  place: string | null;
+  company: string | null;
+};
+
+export type SeenExport = {
+  exportedAt: string;
+  appName: string;
+  entries: SeenExportEntry[];
 };

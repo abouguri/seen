@@ -88,11 +88,20 @@
   --ls-caption: 0em;
 }
 
-/* Light mode follows the system setting. Values not given explicitly in
-   §7.1's table (surface-3, accent-dim) are derived from Apple's HIG light
-   palette / the same alpha ratio as their dark counterparts. */
+/* Light mode follows the system setting by default (M1). M5 adds an
+   explicit Appearance setting (System/Light/Dark) — an explicit choice
+   is a data-theme attribute on <html> (set by ThemeProvider) and must
+   win over the system preference in both directions:
+   - System is light + user picks Dark  -> the media query below would
+     normally apply light, so it's guarded to skip when data-theme="dark".
+   - System is dark + user picks Light  -> the media query never fires
+     (system isn't light), so a separate unconditional
+     :root[data-theme="light"] block carries the same values.
+   Values not given explicitly in §7.1's table (surface-3, accent-dim)
+   are derived from Apple's HIG light palette / the same alpha ratio as
+   their dark counterparts. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #ffffff;
     --surface-1: #f2f2f7;
     --surface-2: #e5e5ea;
@@ -108,6 +117,23 @@
 
     --material-chrome: rgba(242, 242, 247, 0.72);
   }
+}
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface-1: #f2f2f7;
+  --surface-2: #e5e5ea;
+  --surface-3: #d1d1d6;
+
+  --label: #000000;
+  --label-2: rgba(60, 60, 67, 0.6);
+  --label-3: rgba(60, 60, 67, 0.3);
+  --separator: rgba(60, 60, 67, 0.29);
+
+  --accent: #ff9500;
+  --accent-dim: rgba(255, 149, 0, 0.14);
+
+  --material-chrome: rgba(242, 242, 247, 0.72);
 }
 
 /* Tailwind v4 CSS-first theme — maps tokens onto utility classes so

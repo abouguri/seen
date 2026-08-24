@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { LibraryTile } from "@/components/library/LibraryTile";
 import { ContextMenu, type ContextMenuItem } from "@/components/library/ContextMenu";
 import { SortSheet } from "@/components/library/SortSheet";
@@ -20,11 +20,55 @@ import type { LibraryFilm, LibrarySort } from "@/lib/types";
 
 const GAP_PX = 8;
 const VIRTUALIZE_THRESHOLD = 300;
+const SORT_VALUES: LibrarySort[] = ["recent_added", "recent_watched", "release_year", "rating", "title"];
 
-export default function LibraryPage() {
+function parseSort(value: string | null): LibrarySort {
+  return SORT_VALUES.includes(value as LibrarySort) ? (value as LibrarySort) : "recent_added";
+}
+
+function parseFilters(params: URLSearchParams): LibraryFilterState {
+  const decade = params.get("decade");
+  const rated = params.get("rated");
+  return {
+    decade: decade ? Number(decade) : undefined,
+    genre: params.get("genre") ?? undefined,
+    director: params.get("director") ?? undefined,
+    rated: rated === "rated" || rated === "unrated" ? rated : undefined,
+  };
+}
+
+function LibraryContent() {
   const router = useRouter();
-  const [sort, setSort] = useState<LibrarySort>("recent_added");
-  const [filters, setFilters] = useState<LibraryFilterState>({});
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Sort/filter live in the URL (fix 3) — so navigating to a film and
+  // back restores the library exactly, via ordinary browser history.
+  const sort = parseSort(searchParams.get("sort"));
+  const filters = useMemo(() => parseFilters(searchParams), [searchParams]);
+
+  function updateParams(updates: Record<string, string | undefined>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === undefined || value === "") params.delete(key);
+      else params.set(key, value);
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function setSort(next: LibrarySort) {
+    updateParams({ sort: next === "recent_added" ? undefined : next });
+  }
+
+  function setFilters(next: LibraryFilterState) {
+    updateParams({
+      decade: next.decade !== undefined ? String(next.decade) : undefined,
+      genre: next.genre,
+      director: next.director,
+      rated: next.rated,
+    });
+  }
+
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [menu, setMenu] = useState<{ film: LibraryFilm; x: number; y: number } | null>(null);
@@ -135,7 +179,7 @@ export default function LibraryPage() {
   }, [films, columns]);
 
   const isEmpty = !loading && films.length === 0;
-  const hasActiveFilters = Object.keys(filters).length > 0;
+  const hasActiveFilters = Object.values(filters).some((value) => value !== undefined);
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
@@ -228,12 +272,7 @@ export default function LibraryPage() {
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
       )}
 
-      <SortSheet
-        open={sortOpen}
-        value={sort}
-        onChange={setSort}
-        onClose={() => setSortOpen(false)}
-      />
+      <SortSheet open={sortOpen} value={sort} onChange={setSort} onClose={() => setSortOpen(false)} />
       <FilterSheet
         open={filterOpen}
         value={filters}
@@ -264,5 +303,13 @@ export default function LibraryPage() {
         onClose={() => setRemoveFilm(null)}
       />
     </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Suspense fallback={null}>
+      <LibraryContent />
+    </Suspense>
   );
 }

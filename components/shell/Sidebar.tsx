@@ -1,25 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Settings } from "lucide-react";
 import { clsx } from "clsx";
 import { NAV_ITEMS } from "@/components/shell/nav-items";
-import { createClient } from "@/lib/supabase/client";
 import { copy } from "@/lib/copy";
 import { APP_NAME } from "@/lib/constants";
 
 /** Desktop fixed left sidebar (§7.5) — same four destinations as the tab bar. */
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/sign-in");
-    router.refresh();
-  }
+  const settingsActive = pathname.startsWith("/settings");
 
   return (
     <aside className="border-separator fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r md:flex">
@@ -51,14 +43,17 @@ export function Sidebar() {
       </nav>
 
       <div className="px-3 pb-6">
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="text-headline text-label-2 hover:bg-surface-1 flex min-h-11 w-full items-center gap-3 rounded-md px-3"
+        <Link
+          href="/settings"
+          aria-current={settingsActive ? "page" : undefined}
+          className={clsx(
+            "text-headline flex min-h-11 w-full items-center gap-3 rounded-md px-3",
+            settingsActive ? "bg-accent-dim text-accent" : "text-label-2 hover:bg-surface-1",
+          )}
         >
-          <LogOut size={20} strokeWidth={2} />
-          {copy.account.signOut}
-        </button>
+          <Settings size={20} strokeWidth={2} />
+          {copy.settings.title}
+        </Link>
       </div>
     </aside>
   );

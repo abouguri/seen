@@ -32,12 +32,23 @@ function extractDirectors(detail: TmdbMovieDetail): string[] {
   return (detail.credits?.crew ?? []).filter((c) => c.job === "Director").map((c) => c.name);
 }
 
-/** §5: on any TMDB response, upsert into films and set synced_at. */
+/**
+ * §5: on any TMDB response, upsert into films and set synced_at.
+ * `genres` comes pre-resolved from the caller (search/discover only give
+ * genre_ids — see lib/tmdb/genres.ts) so a library built entirely from
+ * the poster wall still has working genre filters without ever hitting
+ * a film's detail page (fix 2). Only included in the upsert when
+ * non-empty: if the genre-map lookup ever fails or a specific film
+ * resolves to zero names, omitting the key preserves whatever's already
+ * cached instead of overwriting good data (e.g. from a prior detail
+ * fetch) with an empty array.
+ */
 export async function upsertFilmSummary(
   admin: SupabaseClient,
   movie: TmdbSearchResult,
+  genres?: string[],
 ): Promise<void> {
-  await admin.from("films").upsert({
+  const payload: Record<string, unknown> = {
     id: movie.id,
     title: movie.title,
     original_title: movie.original_title ?? null,
@@ -47,7 +58,10 @@ export async function upsertFilmSummary(
     tmdb_rating: movie.vote_average ?? null,
     popularity: movie.popularity ?? null,
     synced_at: new Date().toISOString(),
-  });
+  };
+  if (genres && genres.length > 0) payload.genres = genres;
+
+  await admin.from("films").upsert(payload);
 }
 
 export async function upsertFilmDetail(

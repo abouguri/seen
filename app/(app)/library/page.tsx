@@ -21,6 +21,10 @@ import type { LibraryFilm, LibrarySort } from "@/lib/types";
 
 const GAP_PX = 8;
 const VIRTUALIZE_THRESHOLD = 300;
+// Title (text-subhead, 20px line-height) + year (text-footnote, 18px) +
+// the tile's gap-1.5 (6px) below the poster — must match LibraryTile's
+// actual rendered height or virtualized rows clip/overlap.
+const TITLE_BLOCK_PX = 44;
 const SORT_VALUES: LibrarySort[] = ["recent_added", "recent_watched", "release_year", "rating", "title"];
 
 function parseSort(value: string | null): LibrarySort {
@@ -94,7 +98,7 @@ function LibraryContent() {
     columns,
   );
   const tileWidth = columns > 0 ? (containerWidth - GAP_PX * (columns - 1)) / columns : 0;
-  const rowHeight = tileWidth > 0 ? tileWidth * 1.5 + GAP_PX : 200;
+  const rowHeight = tileWidth > 0 ? tileWidth * 1.5 + TITLE_BLOCK_PX + GAP_PX : 200;
   const rowCount = Math.ceil(films.length / columns);
   const shouldVirtualize = films.length > VIRTUALIZE_THRESHOLD;
 

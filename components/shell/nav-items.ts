@@ -1,4 +1,4 @@
-import { BarChart3, CirclePlus, LibraryBig, Search } from "lucide-react";
+import { BarChart3, CirclePlus, LibraryBig, Search, Settings } from "lucide-react";
 import { copy } from "@/lib/copy";
 
 export const NAV_ITEMS = [
@@ -6,4 +6,5 @@ export const NAV_ITEMS = [
   { href: "/add", label: copy.nav.add, icon: CirclePlus },
   { href: "/search", label: copy.nav.search, icon: Search },
   { href: "/stats", label: copy.nav.stats, icon: BarChart3 },
+  { href: "/settings", label: copy.settings.title, icon: Settings },
 ] as const;

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { posterUrl } from "@/lib/images";
+import { Stars } from "@/components/ui/Stars";
 import type { LibraryFilm } from "@/lib/types";
 
 const LONG_PRESS_MS = 500;
@@ -100,37 +101,58 @@ export function LibraryTile({
   }
 
   return (
-    <button
-      ref={tileRef}
-      type="button"
-      tabIndex={tabIndex}
-      onKeyDown={onKeyDown}
-      onFocus={onFocus}
-      onClick={handleClick}
-      onContextMenu={handleContextMenu}
-      onPointerDown={handlePointerDown}
-      onPointerUp={clearLongPress}
-      onPointerLeave={clearLongPress}
-      onPointerCancel={clearLongPress}
-      onMouseEnter={() => router.prefetch(href)}
-      aria-label={film.title}
-      className="focus-visible:outline-accent relative block aspect-[2/3] w-full overflow-hidden rounded-md outline-offset-2"
-    >
-      <div ref={imgRef} className="bg-surface-2 absolute inset-0">
-        {url ? (
-          <Image
-            src={url}
-            alt={alt}
-            fill
-            sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 640px) 24vw, 32vw"
-            className="object-cover"
-          />
-        ) : (
-          <div className="text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
-            {film.title}
+    <div className="flex flex-col gap-1.5">
+      <button
+        ref={tileRef}
+        type="button"
+        tabIndex={tabIndex}
+        onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+        onPointerDown={handlePointerDown}
+        onPointerUp={clearLongPress}
+        onPointerLeave={clearLongPress}
+        onPointerCancel={clearLongPress}
+        onMouseEnter={() => router.prefetch(href)}
+        aria-label={film.title}
+        className="group focus-visible:outline-accent relative block aspect-2/3 w-full overflow-hidden rounded-sm outline-offset-2"
+      >
+        <div
+          ref={imgRef}
+          className="bg-surface-2 absolute inset-0 transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105"
+        >
+          {url ? (
+            <Image
+              src={url}
+              alt={alt}
+              fill
+              sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 640px) 24vw, 32vw"
+              className="object-cover"
+            />
+          ) : (
+            <div className="text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
+              {film.title}
+            </div>
+          )}
+        </div>
+
+        {film.rating != null && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-linear-to-t from-black/85 to-transparent p-2 pt-6 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+            <Stars value={film.rating} size={12} />
+            {film.watchCount > 1 && (
+              <span className="text-caption text-label-2">{film.watchCount}×</span>
+            )}
           </div>
         )}
+      </button>
+
+      <div aria-hidden="true">
+        <p className="text-subhead font-semibold text-ellipsis whitespace-nowrap overflow-hidden">
+          {film.title}
+        </p>
+        <p className="text-footnote text-label-2">{film.year ?? ""}</p>
       </div>
-    </button>
+    </div>
   );
 }

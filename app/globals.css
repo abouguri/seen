@@ -8,34 +8,41 @@
    ========================================================================== */
 
 :root {
-  /* Surfaces — true black base, elevated greys (OLED-first, Apple dark mode) */
-  --bg: #000000;
-  --surface-1: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
+  /* Surfaces — near-black base with a violet cast, elevated greys tinted
+     to match (OLED-first, posters still read as the brightest thing on
+     screen). Replaces the neutral-grey Apple palette per the SEEN App
+     redesign (design.claude.ai project "Netflix extract implementation"). */
+  --bg: #09080d;
+  --surface-1: #17151d;
+  --surface-2: #211f29;
+  --surface-3: #2f2c3a;
 
   /* Labels */
   --label: #ffffff;
-  --label-2: rgba(235, 235, 245, 0.6);
-  --label-3: rgba(235, 235, 245, 0.3);
-  --separator: rgba(84, 84, 88, 0.55);
+  --label-2: #918aa5;
+  --label-3: rgba(145, 138, 165, 0.55);
+  --separator: rgba(255, 255, 255, 0.14);
 
-  /* Accent — Apple system orange (dark). Interactive elements only. */
-  --accent: #ff9f0a;
-  --accent-dim: rgba(255, 159, 10, 0.14);
-  --danger: #ff453a;
+  /* Accent — violet, replacing the Apple system orange. Interactive
+     elements only (§7.1's accent-discipline rule still applies). */
+  --accent: #7559ff;
+  --accent-dim: rgba(117, 89, 255, 0.16);
+  --danger: #ff5f57;
   --good: #30d158;
   /* Accent is bright in both modes, so text on it stays dark for the
-     4.5:1 contrast floor in §7.7 — not given a value in §7.1's table. */
+     4.5:1 contrast floor in §7.7 — not given a value in §7.1's table.
+     #7559FF is 4.63:1 against black text vs 4.54:1 against white —
+     black wins, so both modes use it. */
   --on-accent: #000000;
-  /* For accent used as small standalone text (links, nav labels), not as
-     an icon fill or a button background — #FF9F0A on black clears 10:1,
-     so dark mode just reuses --accent. Light mode's #FF9500 on white is
-     only 2.20:1 there, below the 4.5:1 floor; overridden per-mode below. */
-  --accent-text: var(--accent);
+  /* For accent used as small standalone text (eyebrow labels, nav
+     labels), not as an icon fill or a button background — #7559FF on
+     --bg is only 4.40:1, short of the 4.5:1 body-text floor, so dark
+     mode lightens to #A696FF (8.01:1). Light mode needs the opposite
+     move (a darker shade) — overridden per-mode below. */
+  --accent-text: #a696ff;
 
   /* Translucent chrome for nav bars, tab bars, materials (§7.3) */
-  --material-chrome: rgba(28, 28, 30, 0.72);
+  --material-chrome: rgba(23, 21, 29, 0.72);
 
   /* Backdrop/scrim colour for sheet dims and poster-title legibility
      gradients — a solid token (not a pre-mixed rgba) so Tailwind's
@@ -45,17 +52,15 @@
   --scrim: #000000;
 
   /* Shape */
-  --r-sm: 10px;
+  --r-sm: 8px;
   --r-md: 14px;
   --r-lg: 20px;
   --r-xl: 28px;
 
-  /* Base spacing unit */
-  --space: 4px;
-
-  /* Type — system stack only, no webfont (§7.2) */
-  --font: -apple-system, "SF Pro Text", "SF Pro Display", "Segoe UI", Inter,
-    system-ui, sans-serif;
+  /* Type — Inter via next/font/google (self-hosted, no runtime request),
+     wired to --font-inter in RootLayout. Replaces the system-font-only
+     stack per the SEEN App redesign (§7.2). */
+  --font: var(--font-inter), -apple-system, "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 
   /* Type scale (§7.2) — size/line-height in rem so Dynamic Type (browser
@@ -120,9 +125,11 @@
     --label-3: rgba(60, 60, 67, 0.3);
     --separator: rgba(60, 60, 67, 0.29);
 
-    --accent: #ff9500;
-    --accent-dim: rgba(255, 149, 0, 0.14);
-    --accent-text: #a66100;
+    --accent: #7559ff;
+    --accent-dim: rgba(117, 89, 255, 0.12);
+    /* #7559FF on white is 4.54:1 — clears the floor but by a hair.
+       #6A4CF0 is the same hue darkened for a real margin (5.38:1). */
+    --accent-text: #6a4cf0;
     /* §7.1 doesn't give separate light-mode danger/good values, so both
        modes shared the dark ones — but #FF453A/#30D158 on white measure
        3.41:1 / 2.02:1, below the floor for the body text they're used as
@@ -146,9 +153,9 @@
   --label-3: rgba(60, 60, 67, 0.3);
   --separator: rgba(60, 60, 67, 0.29);
 
-  --accent: #ff9500;
-  --accent-dim: rgba(255, 149, 0, 0.14);
-  --accent-text: #a66100;
+  --accent: #7559ff;
+  --accent-dim: rgba(117, 89, 255, 0.12);
+  --accent-text: #6a4cf0;
   --danger: #d63a31;
   --good: #1f8638;
 
@@ -274,6 +281,16 @@
      fallback wherever corner-shape isn't supported yet. */
   .squircle {
     corner-shape: squircle;
+  }
+
+  /* Horizontally-scrolling row (TopNav's tab list under ~500px) with the
+     scrollbar hidden — the content itself signals scrollability. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 

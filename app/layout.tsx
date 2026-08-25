@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { APP_NAME } from "@/lib/constants";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/components/providers/ThemeProvider";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -10,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`h-full antialiased ${inter.variable}`}>
       <head>
         {/* Applies a stored Light/Dark override before first paint, so
             switching Appearance never causes a flash of the wrong theme. */}

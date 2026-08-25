@@ -8,18 +8,30 @@ import { copy } from "@/lib/copy";
 export type FilterDropdownOption<T extends string | number> = {
   value: T;
   label: string;
-  count: number;
+  count?: number;
 };
 
 type FilterDropdownProps<T extends string | number> = {
   fieldLabel: string;
-  allLabel: string;
+  /** Omit for a control with no "unset" state (e.g. Sort — there's
+   *  always exactly one active choice, so no reset row is rendered). */
+  allLabel?: string;
   options: FilterDropdownOption<T>[];
   value: T | undefined;
   onChange: (value: T | undefined) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
+
+// Netflix's Genres panel fits 21 options into 194px by going to three
+// columns instead of one long scrolling list (measured on /browse/genre).
+// Same rule here: a long Director/Tag list stays scannable in one glance
+// instead of a 700px+ scroll.
+function columnsFor(count: number): 1 | 2 | 3 {
+  if (count > 16) return 3;
+  if (count > 8) return 2;
+  return 1;
+}
 
 /**
  * SEEN Interaction Plan §4 — instant-apply, anchored panel, single-select
@@ -45,6 +57,7 @@ export function FilterDropdown<T extends string | number>({
 
   const selected = options.find((o) => o.value === value);
   const active = selected !== undefined;
+  const cols = columnsFor(options.length);
 
   useEffect(() => {
     if (!open) return;
@@ -113,33 +126,44 @@ export function FilterDropdown<T extends string | number>({
         />
       </button>
 
+      {/* Kept mounted (not conditionally rendered) so open/close is a
+          pure CSS transition — but a closed panel must still be pulled
+          out of both the tab order (tabIndex=-1 on each option already
+          does that) and the accessibility tree, or a screen reader
+          announces all of a page's closed dropdowns as live content. */}
       <div
         ref={panelRef}
         role="menu"
         aria-label={`${copy.library.filterLabel}: ${fieldLabel}`}
+        inert={!open}
         className={clsx(
-          "bg-surface-1 border-separator absolute top-[calc(100%+8px)] left-0 z-20 max-h-72 min-w-[220px] origin-top-left overflow-y-auto rounded-md border p-1.5 shadow-[0_16px_40px_-12px_rgba(0,0,0,.8)]",
+          "bg-surface-1 border-separator absolute top-[calc(100%+8px)] left-0 z-20 origin-top-left rounded-md border p-1.5 shadow-[0_16px_40px_-12px_rgba(0,0,0,.8)]",
           "transition-[opacity,transform] duration-(--t-panel) ease-(--default-transition-timing-function)",
           open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-98 -translate-y-1.5 opacity-0",
+          cols === 1 ? "max-h-72 min-w-55 overflow-y-auto" : "max-w-115",
         )}
       >
-        <Option
-          label={allLabel}
-          count={undefined}
-          checked={value === undefined}
-          onSelect={() => select(undefined)}
-          onArrow={moveOption}
-        />
-        {options.map((opt) => (
-          <Option
-            key={opt.value}
-            label={opt.label}
-            count={opt.count}
-            checked={value === opt.value}
-            onSelect={() => select(opt.value)}
-            onArrow={moveOption}
-          />
-        ))}
+        <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(140px, 1fr))` }}>
+          {allLabel && (
+            <Option
+              label={allLabel}
+              count={undefined}
+              checked={value === undefined}
+              onSelect={() => select(undefined)}
+              onArrow={moveOption}
+            />
+          )}
+          {options.map((opt) => (
+            <Option
+              key={opt.value}
+              label={opt.label}
+              count={opt.count}
+              checked={value === opt.value}
+              onSelect={() => select(opt.value)}
+              onArrow={moveOption}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

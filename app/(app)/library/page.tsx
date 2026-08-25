@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { LibraryTile } from "@/components/library/LibraryTile";
 import { ContextMenu, type ContextMenuItem } from "@/components/library/ContextMenu";
-import { SortSheet } from "@/components/library/SortSheet";
+import { SortControl } from "@/components/library/SortControl";
 import { FilterBar } from "@/components/library/FilterBar";
 import { useLibraryData, type LibraryFilterState } from "@/components/library/useLibraryData";
 import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
@@ -76,7 +76,6 @@ function LibraryContent() {
     });
   }
 
-  const [sortOpen, setSortOpen] = useState(false);
   const [menu, setMenu] = useState<{ film: LibraryFilm; x: number; y: number } | null>(null);
   const [logFilm, setLogFilm] = useState<LibraryFilm | null>(null);
   const [removeFilm, setRemoveFilm] = useState<LibraryFilm | null>(null);
@@ -202,9 +201,7 @@ function LibraryContent() {
           <p className="text-subhead text-label-2 shrink-0">
             {total} film{total === 1 ? "" : "s"}
           </p>
-          <Button variant="secondary" onClick={() => setSortOpen(true)} className="shrink-0">
-            {copy.library.sortLabel}
-          </Button>
+          <SortControl value={sort} onChange={setSort} />
         </div>
 
         <div className="px-4 pb-4 md:px-8">
@@ -293,7 +290,6 @@ function LibraryContent() {
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
       )}
 
-      <SortSheet open={sortOpen} value={sort} onChange={setSort} onClose={() => setSortOpen(false)} />
 
       {logFilm && (
         <LogViewingSheet

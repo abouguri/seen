@@ -46,7 +46,15 @@ export function FilterBar({ value, onChange }: FilterBarProps) {
   }
 
   return (
-    <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+    // A scroll container clips everything inside it, including an
+    // absolutely-positioned dropdown panel anchored to one of its
+    // children — and per the CSS Overflow spec, setting only overflow-x
+    // forces the other axis to `auto` too (you can't have one axis
+    // clipping and the other visible), so `overflow-x-auto` alone turns
+    // this 38px-tall row into a 38px-tall clipping box for every panel
+    // inside it. Scoped to narrow screens, where it's actually needed —
+    // at desktop widths this row doesn't overflow in the first place.
+    <div className="no-scrollbar flex items-center gap-2 max-sm:overflow-x-auto sm:flex-wrap">
       <FilterDropdown
         fieldLabel={copy.library.filter.decade}
         allLabel={copy.library.filter.allDecades}

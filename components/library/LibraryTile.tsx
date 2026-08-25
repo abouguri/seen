@@ -120,18 +120,23 @@ export function LibraryTile({
       >
         <div
           ref={imgRef}
-          className="bg-surface-2 absolute inset-0 transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105"
+          className="absolute inset-0 transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105"
         >
           {url ? (
-            <Image
-              src={url}
-              alt={alt}
-              fill
-              sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 640px) 24vw, 32vw"
-              className="object-cover"
-            />
+            <>
+              {/* Pulses until the image paints over it — no load-state
+                  tracking needed, the opaque cover art just occludes it. */}
+              <div className="bg-surface-2 absolute inset-0 animate-pulse" />
+              <Image
+                src={url}
+                alt={alt}
+                fill
+                sizes="(min-width: 1280px) 12vw, (min-width: 1024px) 16vw, (min-width: 640px) 24vw, 32vw"
+                className="object-cover"
+              />
+            </>
           ) : (
-            <div className="text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
+            <div className="bg-surface-2 text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
               {film.title}
             </div>
           )}

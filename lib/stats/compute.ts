@@ -6,7 +6,12 @@ type EntryRow = {
   film_id: number;
   watched_on: string | null;
   created_at: string;
-  films: { title: string; runtime: number | null; directors: string[] | null } | null;
+  films: {
+    title: string;
+    runtime: number | null;
+    directors: string[] | null;
+    release_year: number | null;
+  } | null;
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -26,8 +31,14 @@ export function computeStats(entries: EntryRow[]): Stats {
   let totalMinutes = 0;
 
   for (const entry of entries) {
-    if (entry.watched_on) {
-      const year = Number(entry.watched_on.slice(0, 4));
+    // A dated viewing wins; a poster-wall add or any other undated entry
+    // still has a real film behind it, so fall back to release year
+    // rather than dropping it from the chart entirely — otherwise a
+    // library added mostly through bulk-add reads as almost empty here.
+    const year = entry.watched_on
+      ? Number(entry.watched_on.slice(0, 4))
+      : (entry.films?.release_year ?? null);
+    if (year !== null) {
       yearCounts.set(year, (yearCounts.get(year) ?? 0) + 1);
       const decade = Math.floor(year / 10) * 10;
       decadeCounts.set(decade, (decadeCounts.get(decade) ?? 0) + 1);

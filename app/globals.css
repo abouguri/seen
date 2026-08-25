@@ -20,6 +20,9 @@
   /* Labels */
   --label: #ffffff;
   --label-2: #918aa5;
+  /* ~2.56:1 on --bg — decorative use only (e.g. a footer wordmark).
+     Never use for body text, labels, or anything a screen reader or a
+     sighted reader needs to make out; that's --label-2 (6.07:1). */
   --label-3: rgba(145, 138, 165, 0.55);
   --separator: rgba(255, 255, 255, 0.14);
 

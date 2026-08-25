@@ -79,17 +79,20 @@ export default async function FilmDetailPage({
 
         <div className="relative -mt-16 flex gap-4 px-4 md:px-8">
           <div
-            className="bg-surface-2 aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-md md:w-36"
+            className="bg-surface-2 relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-md md:w-36"
             style={{ viewTransitionName: "shared-poster" } as React.CSSProperties}
           >
             {poster ? (
-              <Image
-                src={poster}
-                alt={`${detail.title} (${detail.year ?? "unknown year"}) poster`}
-                width={342}
-                height={513}
-                className="h-full w-full object-cover"
-              />
+              <>
+                <div className="bg-surface-2 absolute inset-0 animate-pulse" />
+                <Image
+                  src={poster}
+                  alt={`${detail.title} (${detail.year ?? "unknown year"}) poster`}
+                  width={342}
+                  height={513}
+                  className="relative h-full w-full object-cover"
+                />
+              </>
             ) : (
               <div className="text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
                 {detail.title}

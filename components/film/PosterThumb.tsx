@@ -20,11 +20,14 @@ export function PosterThumb({ title, year, posterPath, size, sizes, className }:
   const alt = `${title} (${year ?? "unknown year"}) poster`;
 
   return (
-    <div className={`bg-surface-2 relative aspect-[2/3] overflow-hidden rounded-md ${className ?? ""}`}>
+    <div className={`relative aspect-[2/3] overflow-hidden rounded-md ${className ?? ""}`}>
       {url ? (
-        <Image src={url} alt={alt} fill sizes={sizes} className="object-cover" />
+        <>
+          <div className="bg-surface-2 absolute inset-0 animate-pulse" />
+          <Image src={url} alt={alt} fill sizes={sizes} className="object-cover" />
+        </>
       ) : (
-        <div className="text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center" role="img" aria-label={alt}>
+        <div className="bg-surface-2 text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center" role="img" aria-label={alt}>
           {title}
         </div>
       )}

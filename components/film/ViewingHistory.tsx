@@ -180,7 +180,7 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
                 type="button"
                 onClick={() => setDeletingEntry(entry)}
                 aria-label={copy.film.deleteViewing}
-                className="text-label-2 hover:text-danger flex h-11 w-11 shrink-0 items-center justify-center"
+                className="text-danger flex h-11 w-11 shrink-0 items-center justify-center hover:opacity-70"
               >
                 <Trash2 size={16} strokeWidth={2} />
               </button>

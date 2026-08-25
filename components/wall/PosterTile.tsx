@@ -95,20 +95,23 @@ export function PosterTile({
       transition={SPRING}
       className="group focus-visible:outline-accent relative aspect-[2/3] w-full overflow-hidden rounded-md outline-offset-2"
     >
-      <div className="bg-surface-2 absolute inset-0">
+      <div className="absolute inset-0">
         {url ? (
-          <Image
-            src={url}
-            alt={alt}
-            fill
-            sizes="(min-width: 1024px) 12vw, (min-width: 640px) 20vw, 30vw"
-            className={clsx(
-              "object-cover transition-[filter] duration-300",
-              selected ? "grayscale-0" : "grayscale",
-            )}
-          />
+          <>
+            <div className="bg-surface-2 absolute inset-0 animate-pulse" />
+            <Image
+              src={url}
+              alt={alt}
+              fill
+              sizes="(min-width: 1024px) 12vw, (min-width: 640px) 20vw, 30vw"
+              className={clsx(
+                "object-cover transition-[filter] duration-150",
+                selected ? "grayscale-0" : "grayscale",
+              )}
+            />
+          </>
         ) : (
-          <div className="text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
+          <div className="bg-surface-2 text-label-2 text-subhead flex h-full w-full items-center justify-center p-2 text-center">
             {film.title}
           </div>
         )}

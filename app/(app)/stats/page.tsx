@@ -8,7 +8,7 @@ export default async function StatsPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("watch_entries")
-    .select("id, film_id, watched_on, created_at, films(title, runtime, directors)");
+    .select("id, film_id, watched_on, created_at, films(title, runtime, directors, release_year)");
 
   if (error) {
     return (

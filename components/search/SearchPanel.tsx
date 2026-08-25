@@ -6,15 +6,29 @@ import { Search as SearchIcon, Check } from "lucide-react";
 import { PosterThumb } from "@/components/film/PosterThumb";
 import { formatWatchedDate } from "@/lib/dates";
 import { copy } from "@/lib/copy";
-import type { FilmSummary } from "@/lib/types";
+import type { FilmSummary, ShowSummary } from "@/lib/types";
 
 type Status = "idle" | "loading" | "success" | "error";
 
+type SearchResult =
+  | (FilmSummary & { mediaType: "movie" })
+  | (ShowSummary & { mediaType: "show" });
+
 const DEBOUNCE_MS = 250;
 
+/**
+ * Queries movies and shows in parallel (/api/tmdb/search and
+ * /api/tmdb/search-shows) rather than TMDB's /search/multi — that would
+ * need its own result-shape handling (movie/tv/person discriminator,
+ * separate genre vocabularies) threaded through this whole pipeline, a
+ * bigger change than reusing the two search endpoints the Add screen
+ * already exercises. Tolerant of one side failing: only shows the error
+ * state if both do, so a single flaky endpoint doesn't hide the other's
+ * results.
+ */
 export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<FilmSummary[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,26 +47,38 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setStatus("loading");
-      try {
-        const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as {
-            error?: { message?: string };
-          } | null;
-          setErrorMessage(body?.error?.message ?? copy.errors.tmdbUnreachable);
-          setStatus("error");
-          return;
-        }
-        const data = (await res.json()) as FilmSummary[];
-        setResults(data);
-        setStatus("success");
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
+      const q = encodeURIComponent(query);
+
+      const [movies, shows] = await Promise.allSettled([
+        fetch(`/api/tmdb/search?q=${q}`, { signal: controller.signal }).then(async (res) => {
+          if (!res.ok) throw new Error();
+          return (await res.json()) as FilmSummary[];
+        }),
+        fetch(`/api/tmdb/search-shows?q=${q}`, { signal: controller.signal }).then(async (res) => {
+          if (!res.ok) throw new Error();
+          return (await res.json()) as ShowSummary[];
+        }),
+      ]);
+
+      if (controller.signal.aborted) return;
+
+      if (movies.status === "rejected" && shows.status === "rejected") {
         setErrorMessage(copy.errors.tmdbUnreachable);
         setStatus("error");
+        return;
       }
+
+      const merged: SearchResult[] = [
+        ...(movies.status === "fulfilled" ? movies.value.map((f) => ({ ...f, mediaType: "movie" as const })) : []),
+        ...(shows.status === "fulfilled" ? shows.value.map((s) => ({ ...s, mediaType: "show" as const })) : []),
+      ];
+      // Stable sort — seen items first, otherwise each source's own
+      // relevance order (and movies-before-shows within a seen group)
+      // is preserved.
+      merged.sort((a, b) => Number(b.seen) - Number(a.seen));
+
+      setResults(merged);
+      setStatus("success");
     }, DEBOUNCE_MS);
 
     return () => {
@@ -97,27 +123,30 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
         )}
 
         {(status === "success" || status === "loading") && results.length > 0 && (
-          <ul className="flex flex-col gap-3">
-            {results.map((film) => (
-              <li key={film.id}>
+          <ul className="flex flex-col gap-4">
+            {results.map((item) => (
+              <li key={`${item.mediaType}-${item.id}`}>
                 <Link
-                  href={`/film/${film.id}`}
+                  href={item.mediaType === "movie" ? `/film/${item.id}` : `/show/${item.id}`}
                   onClick={onNavigate}
                   className="hover:bg-surface-1 flex items-center gap-3 rounded-md p-2"
                 >
                   <PosterThumb
-                    title={film.title}
-                    year={film.year}
-                    posterPath={film.posterPath}
+                    title={item.title}
+                    year={item.year}
+                    posterPath={item.posterPath}
                     size="w342"
                     sizes="56px"
                     className="w-14 shrink-0"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-body text-label truncate">{film.title}</p>
-                    <p className="text-footnote text-label-2">{film.year ?? "—"}</p>
+                    <p className="text-body text-label truncate">{item.title}</p>
+                    <p className="text-footnote text-label-2">
+                      {item.year ?? "—"}
+                      {item.mediaType === "show" && ` · ${copy.library.filter.shows}`}
+                    </p>
                   </div>
-                  {film.seen && (
+                  {item.seen && (
                     <div className="flex shrink-0 flex-col items-end gap-0.5">
                       <span className="text-good text-caption flex items-center gap-1 font-medium uppercase">
                         <Check size={14} strokeWidth={2.5} />
@@ -125,9 +154,9 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
                       </span>
                       <span className="text-caption text-label-2">
                         {formatWatchedDate({
-                          watchedOn: film.lastWatchedOn,
-                          precision: film.lastWatchedPrecision ?? "unknown",
-                          eraLabel: film.lastWatchedEraLabel,
+                          watchedOn: item.lastWatchedOn,
+                          precision: item.lastWatchedPrecision ?? "unknown",
+                          eraLabel: item.lastWatchedEraLabel,
                         })}
                       </span>
                     </div>

@@ -7,7 +7,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { LibraryTile } from "@/components/library/LibraryTile";
 import { ContextMenu, type ContextMenuItem } from "@/components/library/ContextMenu";
 import { SortSheet } from "@/components/library/SortSheet";
-import { FilterSheet } from "@/components/library/FilterSheet";
+import { FilterBar } from "@/components/library/FilterBar";
 import { useLibraryData, type LibraryFilterState } from "@/components/library/useLibraryData";
 import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
 import { useRovingGrid } from "@/components/shared/useRovingGrid";
@@ -77,7 +77,6 @@ function LibraryContent() {
   }
 
   const [sortOpen, setSortOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [menu, setMenu] = useState<{ film: LibraryFilm; x: number; y: number } | null>(null);
   const [logFilm, setLogFilm] = useState<LibraryFilm | null>(null);
   const [removeFilm, setRemoveFilm] = useState<LibraryFilm | null>(null);
@@ -199,19 +198,17 @@ function LibraryContent() {
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
         <LargeTitle ref={titleRef} title={copy.library.title} />
 
-        <div className="flex items-center justify-between px-4 pb-4 md:px-8">
-          <p className="text-subhead text-label-2">
+        <div className="flex items-center justify-between gap-3 px-4 pb-3 md:px-8">
+          <p className="text-subhead text-label-2 shrink-0">
             {total} film{total === 1 ? "" : "s"}
           </p>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setSortOpen(true)}>
-              {copy.library.sortLabel}
-            </Button>
-            <Button variant="secondary" onClick={() => setFilterOpen(true)}>
-              {copy.library.filterLabel}
-              {hasActiveFilters ? " •" : ""}
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={() => setSortOpen(true)} className="shrink-0">
+            {copy.library.sortLabel}
+          </Button>
+        </div>
+
+        <div className="px-4 pb-4 md:px-8">
+          <FilterBar value={filters} onChange={setFilters} />
         </div>
 
         {error && films.length === 0 && (
@@ -256,6 +253,7 @@ function LibraryContent() {
                           key={film.id}
                           film={film}
                           onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                          onQuickLog={(f) => setLogFilm(f)}
                           tileRef={setItemRef(index)}
                           tabIndex={index === activeIndex ? 0 : -1}
                           onKeyDown={(event) => handleKeyDown(event, index)}
@@ -277,6 +275,7 @@ function LibraryContent() {
                   key={film.id}
                   film={film}
                   onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                  onQuickLog={(f) => setLogFilm(f)}
                   tileRef={setItemRef(index)}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onKeyDown={(event) => handleKeyDown(event, index)}
@@ -295,12 +294,6 @@ function LibraryContent() {
       )}
 
       <SortSheet open={sortOpen} value={sort} onChange={setSort} onClose={() => setSortOpen(false)} />
-      <FilterSheet
-        open={filterOpen}
-        value={filters}
-        onChange={setFilters}
-        onClose={() => setFilterOpen(false)}
-      />
 
       {logFilm && (
         <LogViewingSheet

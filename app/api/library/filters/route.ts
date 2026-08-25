@@ -24,7 +24,7 @@ export async function GET() {
   }
 
   const [{ data, error }, { data: tagRows, error: tagError }] = await Promise.all([
-    supabase.from("user_films").select("release_year, genres, directors"),
+    supabase.from("user_films").select("release_year, genres, directors, rating"),
     // Only tags actually attached to an entry — same "don't offer a filter
     // that returns zero films" rule as decade/genre/director above.
     supabase.from("entry_tags").select("tags(name)"),
@@ -37,26 +37,39 @@ export async function GET() {
     );
   }
 
-  const decades = new Set<number>();
-  const genres = new Set<string>();
-  const directors = new Set<string>();
-  const tags = new Set<string>();
+  const decades = new Map<number, number>();
+  const genres = new Map<string, number>();
+  const directors = new Map<string, number>();
+  const tags = new Map<string, number>();
+  let rated = 0;
+  let unrated = 0;
+
+  function bump<T>(map: Map<T, number>, key: T) {
+    map.set(key, (map.get(key) ?? 0) + 1);
+  }
 
   for (const row of data ?? []) {
-    if (row.release_year) decades.add(Math.floor(row.release_year / 10) * 10);
-    for (const g of row.genres ?? []) genres.add(g);
-    for (const d of row.directors ?? []) directors.add(d);
+    if (row.release_year) bump(decades, Math.floor(row.release_year / 10) * 10);
+    for (const g of row.genres ?? []) bump(genres, g);
+    for (const d of row.directors ?? []) bump(directors, d);
+    if (row.rating !== null) rated++;
+    else unrated++;
   }
   for (const row of tagRows ?? []) {
     const name = (row.tags as unknown as { name: string } | null)?.name;
-    if (name) tags.add(name);
+    if (name) bump(tags, name);
+  }
+
+  function toOptions<T>(map: Map<T, number>, sort: (a: T, b: T) => number) {
+    return [...map.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => sort(a.value, b.value));
   }
 
   const filters: LibraryFilters = {
-    decades: [...decades].sort((a, b) => b - a),
-    genres: [...genres].sort(),
-    directors: [...directors].sort(),
-    tags: [...tags].sort(),
+    decades: toOptions(decades, (a, b) => b - a),
+    genres: toOptions(genres, (a, b) => a.localeCompare(b)),
+    directors: toOptions(directors, (a, b) => a.localeCompare(b)),
+    tags: toOptions(tags, (a, b) => a.localeCompare(b)),
+    rated: { rated, unrated },
   };
 
   return NextResponse.json(filters);

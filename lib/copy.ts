@@ -43,6 +43,7 @@ export const copy = {
       decade: "Decade",
       genre: "Genre",
       director: "Director",
+      ratingFieldLabel: "Rating",
       rated: "Rated",
       unrated: "Unrated",
       allDecades: "All decades",
@@ -52,7 +53,6 @@ export const copy = {
       tag: "Tag",
       allTags: "All tags",
       clear: "Clear filters",
-      apply: "Apply",
     },
     contextMenu: {
       logAnother: "Log another viewing",

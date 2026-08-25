@@ -24,11 +24,12 @@ export function ConfirmSheet({ open, title, body, confirmLabel, onConfirm, onClo
             {copy.library.cancelAction}
           </Button>
           <Button
+            variant="danger-solid"
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className="bg-danger flex-1 hover:opacity-90"
+            className="flex-1"
           >
             {confirmLabel}
           </Button>

@@ -176,14 +176,14 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
                   </div>
                 )}
               </button>
-              <button
-                type="button"
+              <Button
+                variant="icon-danger"
                 onClick={() => setDeletingEntry(entry)}
                 aria-label={copy.film.deleteViewing}
-                className="text-danger flex h-11 w-11 shrink-0 items-center justify-center hover:opacity-70"
+                className="shrink-0"
               >
                 <Trash2 size={16} strokeWidth={2} />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

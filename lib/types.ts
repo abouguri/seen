@@ -41,11 +41,16 @@ export type LibraryFilm = {
   rating: number | null;
 };
 
+export type FilterOption<T> = { value: T; count: number };
+
+/** Counted so the filter dropdowns can show "1990s (3)" and grey out —
+ *  never suggest — an option that would return zero films. */
 export type LibraryFilters = {
-  decades: number[];
-  genres: string[];
-  directors: string[];
-  tags: string[];
+  decades: FilterOption<number>[];
+  genres: FilterOption<string>[];
+  directors: FilterOption<string>[];
+  tags: FilterOption<string>[];
+  rated: { rated: number; unrated: number };
 };
 
 export type ImportSource = "letterboxd" | "imdb" | "seen_export";

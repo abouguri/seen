@@ -32,6 +32,15 @@
   --accent-dim: rgba(117, 89, 255, 0.16);
   --danger: #ff5f57;
   --good: #30d158;
+  /* Hover fills. --accent sits at only 4.63:1 against its black label
+     (§7.7 floor is 4.5:1), so the hover state has to move lighter, not
+     darker — a reflexive darken (e.g. #6B51F5) drops to 4.12:1 and
+     fails. #8A72FF clears 5.93:1 against black, so hover improves
+     legibility instead of costing it. Background-relative, so it's the
+     same value in both modes. --danger-hi is the light-mode danger
+     unchanged — see the light-mode block for why. */
+  --accent-hi: #8a72ff;
+  --danger-hi: #ff8b85;
   /* Accent is bright in both modes, so text on it stays dark for the
      4.5:1 contrast floor in §7.7 — not given a value in §7.1's table.
      #7559FF is 4.63:1 against black text vs 4.54:1 against white —
@@ -99,6 +108,18 @@
   --fs-caption: 0.75rem;
   --lh-caption: 1rem;
   --ls-caption: 0em;
+
+  /* Interaction timing scale — deliberately faster and more linear than
+     Netflix's button curve (250ms, cubic-bezier(.4,0,.68,.06), a
+     lean-back ten-foot-interface stall-then-snap). SEEN is operated at
+     arm's length, not browsed from a couch. All four share Tailwind's
+     default easing (--default-transition-timing-function,
+     cubic-bezier(.4,0,.2,1)) — reduced-motion still overrides every one
+     of these to a 120ms opacity fade, see the bottom of this file. */
+  --t-press: 90ms; /* :active scale */
+  --t-hover: 140ms; /* fills, text/icon colour */
+  --t-card: 160ms; /* poster lift + shadow */
+  --t-panel: 180ms; /* dropdown/sheet open-close */
 }
 
 /* Light mode follows the system setting by default (M1). M5 adds an
@@ -139,6 +160,11 @@
        (error copy, the search "seen" badge). Darkened to the same hue at
        4.66:1 / 4.64:1. Dark mode is unaffected — those already clear 6:1+. */
     --danger: #d63a31;
+    /* No lighter shade for light mode — a lighter red on white loses
+       contrast instead of gaining it (the opposite of dark mode's
+       situation). Hover keeps the same danger red; only the background
+       tint changes, which is enough of a hover cue on its own. */
+    --danger-hi: #d63a31;
     --good: #1f8638;
 
     --material-chrome: rgba(242, 242, 247, 0.72);
@@ -160,6 +186,7 @@
   --accent-dim: rgba(117, 89, 255, 0.12);
   --accent-text: #6a4cf0;
   --danger: #d63a31;
+  --danger-hi: #d63a31;
   --good: #1f8638;
 
   --material-chrome: rgba(242, 242, 247, 0.72);
@@ -180,7 +207,9 @@
   --color-accent: var(--accent);
   --color-accent-text: var(--accent-text);
   --color-accent-dim: var(--accent-dim);
+  --color-accent-hi: var(--accent-hi);
   --color-danger: var(--danger);
+  --color-danger-hi: var(--danger-hi);
   --color-good: var(--good);
   --color-on-accent: var(--on-accent);
   --color-scrim: var(--scrim);

@@ -23,14 +23,19 @@ export async function GET() {
     );
   }
 
-  const [{ data, error }, { data: tagRows, error: tagError }] = await Promise.all([
-    supabase.from("user_films").select("release_year, genres, directors, rating"),
-    // Only tags actually attached to an entry — same "don't offer a filter
-    // that returns zero films" rule as decade/genre/director above.
-    supabase.from("entry_tags").select("tags(name)"),
-  ]);
+  const [{ data, error }, { data: tagRows, error: tagError }, { data: showData, error: showError }] =
+    await Promise.all([
+      supabase.from("user_films").select("release_year, genres, directors, rating"),
+      // Only tags actually attached to an entry — same "don't offer a filter
+      // that returns zero films" rule as decade/genre/director above.
+      supabase.from("entry_tags").select("tags(name)"),
+      // Shows fold into decade/genre/rated (director/tag stay film-only —
+      // shows have creators, not directors, and show tagging doesn't
+      // exist yet), matching the Type=All default in the library itself.
+      supabase.from("user_shows").select("first_air_year, genres, rating"),
+    ]);
 
-  if (error || tagError) {
+  if (error || tagError || showError) {
     return NextResponse.json(
       { error: { code: "query_failed", message: copy.errors.libraryLoadFailed } },
       { status: 500 },
@@ -52,6 +57,12 @@ export async function GET() {
     if (row.release_year) bump(decades, Math.floor(row.release_year / 10) * 10);
     for (const g of row.genres ?? []) bump(genres, g);
     for (const d of row.directors ?? []) bump(directors, d);
+    if (row.rating !== null) rated++;
+    else unrated++;
+  }
+  for (const row of showData ?? []) {
+    if (row.first_air_year) bump(decades, Math.floor(row.first_air_year / 10) * 10);
+    for (const g of row.genres ?? []) bump(genres, g);
     if (row.rating !== null) rated++;
     else unrated++;
   }

@@ -1,16 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
-import { computeStats } from "@/lib/stats/compute";
+import { computeStats, type MovieEntryRow, type ShowEntryRow } from "@/lib/stats/compute";
 import { formatLoggedDate } from "@/lib/dates";
 import { BarChart } from "@/components/stats/BarChart";
 import { copy } from "@/lib/copy";
 
 export default async function StatsPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("watch_entries")
-    .select("id, film_id, watched_on, created_at, films(title, runtime, directors, release_year)");
+  const [movies, shows] = await Promise.all([
+    supabase
+      .from("watch_entries")
+      .select("id, film_id, watched_on, created_at, films(title, runtime, directors, release_year)"),
+    supabase
+      .from("show_watch_entries")
+      .select("id, show_id, watched_on, created_at, shows(name, first_air_year)"),
+  ]);
 
-  if (error) {
+  if (movies.error || shows.error) {
     return (
       <div className="flex flex-1 items-center justify-center px-4">
         <p className="text-body text-danger max-w-[32ch] text-center">{copy.stats.loadFailed}</p>
@@ -18,9 +23,10 @@ export default async function StatsPage() {
     );
   }
 
-  const entries = (data ?? []) as unknown as Parameters<typeof computeStats>[0];
+  const movieEntries = (movies.data ?? []) as unknown as MovieEntryRow[];
+  const showEntries = (shows.data ?? []) as unknown as ShowEntryRow[];
 
-  if (entries.length === 0) {
+  if (movieEntries.length === 0 && showEntries.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center px-4">
         <p className="text-body text-label-2 max-w-[32ch] text-center">{copy.stats.emptyMessage}</p>
@@ -28,7 +34,7 @@ export default async function StatsPage() {
     );
   }
 
-  const stats = computeStats(entries);
+  const stats = computeStats(movieEntries, showEntries);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-6 pb-16 md:px-8">

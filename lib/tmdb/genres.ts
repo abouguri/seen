@@ -32,3 +32,23 @@ export function mapGenreIds(genreIds: number[] | undefined, genreMap: Map<number
   if (!genreIds) return [];
   return genreIds.map((id) => genreMap.get(id)).filter((name): name is string => Boolean(name));
 }
+
+/** TV's genre id vocabulary is a different list from movies' (e.g. TV's
+ *  10759 is "Action & Adventure", with no movie equivalent) — a separate
+ *  lookup, not a reuse of getGenreMap with a parameter. */
+export async function getTvGenreMap(): Promise<Map<number, string>> {
+  const res = await fetch(`${TMDB_BASE}/genre/tv/list`, {
+    headers: {
+      Authorization: `Bearer ${process.env.TMDB_ACCESS_TOKEN}`,
+      accept: "application/json",
+    },
+    next: { revalidate: 2592000 }, // 30 days
+  });
+
+  if (!res.ok) {
+    return new Map();
+  }
+
+  const data = (await res.json()) as { genres: { id: number; name: string }[] };
+  return new Map(data.genres.map((g) => [g.id, g.name]));
+}

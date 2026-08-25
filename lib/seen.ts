@@ -63,3 +63,56 @@ export function buildPosterWallSet(entries: EntryRow[]): Set<number> {
   }
   return set;
 }
+
+type ShowEntryRow = {
+  show_id: number;
+  watched_on: string | null;
+  precision: string;
+  era_label: string | null;
+  created_at: string;
+  source: string;
+};
+
+/** Mirrors buildSeenMap — same "most recent known date, else most
+ *  recently logged" preference, keyed by show_id instead of film_id. */
+export function buildShowSeenMap(entries: ShowEntryRow[]): Map<number, SeenInfo> {
+  const best = new Map<number, ShowEntryRow>();
+
+  for (const entry of entries) {
+    const current = best.get(entry.show_id);
+    if (!current) {
+      best.set(entry.show_id, entry);
+      continue;
+    }
+
+    const entryHasDate = entry.watched_on !== null;
+    const currentHasDate = current.watched_on !== null;
+
+    if (entryHasDate && !currentHasDate) {
+      best.set(entry.show_id, entry);
+    } else if (entryHasDate && currentHasDate) {
+      if (entry.watched_on! > current.watched_on!) best.set(entry.show_id, entry);
+    } else if (!entryHasDate && !currentHasDate) {
+      if (entry.created_at > current.created_at) best.set(entry.show_id, entry);
+    }
+  }
+
+  const result = new Map<number, SeenInfo>();
+  for (const [showId, entry] of best) {
+    result.set(showId, {
+      watchedOn: entry.watched_on,
+      precision: entry.precision as WatchPrecision,
+      eraLabel: entry.era_label,
+    });
+  }
+  return result;
+}
+
+/** Show ids that have at least one source='poster_wall' row for this user. */
+export function buildShowPosterWallSet(entries: ShowEntryRow[]): Set<number> {
+  const set = new Set<number>();
+  for (const entry of entries) {
+    if (entry.source === "poster_wall") set.add(entry.show_id);
+  }
+  return set;
+}

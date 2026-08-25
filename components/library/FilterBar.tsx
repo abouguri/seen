@@ -34,7 +34,10 @@ export function FilterBar({ value, onChange }: FilterBarProps) {
 
   useEffect(() => {
     fetch("/api/library/filters")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
       .then(setOptions)
       .catch(() => setOptions(EMPTY));
   }, []);
@@ -55,6 +58,18 @@ export function FilterBar({ value, onChange }: FilterBarProps) {
     // inside it. Scoped to narrow screens, where it's actually needed —
     // at desktop widths this row doesn't overflow in the first place.
     <div className="no-scrollbar flex items-center gap-2 max-sm:overflow-x-auto sm:flex-wrap">
+      <FilterDropdown
+        fieldLabel={copy.library.filter.typeFieldLabel}
+        allLabel={copy.library.filter.allTypes}
+        options={[
+          { value: "movie" as const, label: copy.library.filter.movies },
+          { value: "show" as const, label: copy.library.filter.shows },
+        ]}
+        value={value.mediaType === "movie" || value.mediaType === "show" ? value.mediaType : undefined}
+        onChange={(v) => onChange({ ...value, mediaType: v })}
+        open={openField === "mediaType"}
+        onOpenChange={openChange("mediaType")}
+      />
       <FilterDropdown
         fieldLabel={copy.library.filter.decade}
         allLabel={copy.library.filter.allDecades}

@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { LibraryFilm, LibrarySort } from "@/lib/types";
+import type { LibraryItem, LibrarySort } from "@/lib/types";
 
 export type LibraryFilterState = {
+  mediaType?: "movie" | "show" | "all";
   decade?: number;
   genre?: string;
   director?: string;
@@ -13,6 +14,7 @@ export type LibraryFilterState = {
 
 function buildQuery(sort: LibrarySort, filters: LibraryFilterState, page: number): string {
   const params = new URLSearchParams({ sort, page: String(page) });
+  if (filters.mediaType) params.set("mediaType", filters.mediaType);
   if (filters.decade !== undefined) params.set("decade", String(filters.decade));
   if (filters.genre) params.set("genre", filters.genre);
   if (filters.director) params.set("director", filters.director);
@@ -22,7 +24,7 @@ function buildQuery(sort: LibrarySort, filters: LibraryFilterState, page: number
 }
 
 export function useLibraryData(sort: LibrarySort, filters: LibraryFilterState) {
-  const [films, setFilms] = useState<LibraryFilm[]>([]);
+  const [films, setFilms] = useState<LibraryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ export function useLibraryData(sort: LibrarySort, filters: LibraryFilterState) {
     fetch(`/api/library?${buildQuery(sort, filters, 1)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error();
-        return (await res.json()) as { films: LibraryFilm[]; total: number };
+        return (await res.json()) as { films: LibraryItem[]; total: number };
       })
       .then((data) => {
         setFilms(data.films);
@@ -64,7 +66,7 @@ export function useLibraryData(sort: LibrarySort, filters: LibraryFilterState) {
     fetch(`/api/library?${buildQuery(sort, filters, nextPage)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error();
-        return (await res.json()) as { films: LibraryFilm[]; total: number };
+        return (await res.json()) as { films: LibraryItem[]; total: number };
       })
       .then((data) => {
         setFilms((prev) => [...prev, ...data.films]);
@@ -81,8 +83,11 @@ export function useLibraryData(sort: LibrarySort, filters: LibraryFilterState) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sort, filterKey, page, films.length, total, loading]);
 
-  const removeFilm = useCallback((filmId: number) => {
-    setFilms((prev) => prev.filter((f) => f.id !== filmId));
+  // Scoped by (mediaType, id), not a bare id — the TMDB movie/tv id
+  // namespaces collide, so a bare-id filter could remove an unrelated
+  // item that happens to share a number with the one actually deleted.
+  const removeFilm = useCallback((mediaType: "movie" | "show", id: number) => {
+    setFilms((prev) => prev.filter((f) => !(f.mediaType === mediaType && f.id === id)));
     setTotal((prev) => Math.max(0, prev - 1));
   }, []);
 

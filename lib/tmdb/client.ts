@@ -4,6 +4,9 @@ import type {
   TmdbMovieDetail,
   TmdbSearchResponse,
   TmdbSearchResult,
+  TmdbTvDetail,
+  TmdbTvSearchResponse,
+  TmdbTvSearchResult,
 } from "@/lib/tmdb/raw-types";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -102,4 +105,65 @@ export async function fetchTmdbMovieDetail(id: number): Promise<TmdbMovieDetail>
   }
 
   return (await res.json()) as TmdbMovieDetail;
+}
+
+/** TV mirrors of the four functions above — same caching, same error
+ *  handling. Kept as parallel functions rather than a shared
+ *  parameterized implementation, matching this file's existing
+ *  movie-only convention. */
+export async function searchTmdbShows(query: string): Promise<TmdbTvSearchResult[]> {
+  const normalised = query.trim().toLowerCase();
+  const url = `${TMDB_BASE}/search/tv?query=${encodeURIComponent(normalised)}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: 86400 },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB tv search failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbTvSearchResponse;
+  return data.results;
+}
+
+/** TV's discover filters by first_air_date_year, not primary_release_year. */
+export async function discoverTmdbShowsByYear(
+  year: number,
+  page: number,
+): Promise<TmdbTvSearchResult[]> {
+  const url = `${TMDB_BASE}/discover/tv?sort_by=popularity.desc&first_air_date_year=${year}&page=${page}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: 86400 },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB tv discover failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbTvSearchResponse;
+  return data.results;
+}
+
+/** Unlike fetchTmdbMovieDetail, no append_to_response is needed —
+ *  created_by is already in the base /tv/{id} response. */
+export async function fetchTmdbShowDetail(id: number): Promise<TmdbTvDetail> {
+  const url = `${TMDB_BASE}/tv/${id}`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+
+  if (res.status === 404) {
+    throw new TmdbNotFoundError(`TMDB show ${id} not found`);
+  }
+  if (!res.ok) {
+    throw new TmdbError(`TMDB tv detail fetch failed with status ${res.status}`);
+  }
+
+  return (await res.json()) as TmdbTvDetail;
 }

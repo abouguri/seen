@@ -17,9 +17,54 @@ export type TmdbSearchResponse = {
   results: TmdbSearchResult[];
 };
 
-/** Response shape from /find/{external_id}?external_source=... */
+/** Response shape from /find/{external_id}?external_source=... — TMDB
+ *  always includes tv_results alongside movie_results, even when it's
+ *  unused (as it is here for now; see lib/tmdb/client.ts findMovieByImdbId). */
 export type TmdbFindResponse = {
   movie_results: TmdbSearchResult[];
+  tv_results: TmdbTvSearchResult[];
+};
+
+export type TmdbTvSearchResult = {
+  id: number;
+  name: string;
+  original_name?: string | null;
+  first_air_date?: string | null;
+  poster_path: string | null;
+  overview?: string | null;
+  vote_average?: number | null;
+  popularity?: number | null;
+  /** Search/discover give ids, not resolved names — see lib/tmdb/genres.ts.
+   *  TV's genre id vocabulary is not the same list as movies'. */
+  genre_ids?: number[];
+};
+
+export type TmdbTvSearchResponse = {
+  results: TmdbTvSearchResult[];
+};
+
+export type TmdbCreatedBy = {
+  name: string;
+};
+
+export type TmdbTvDetail = {
+  id: number;
+  name: string;
+  original_name?: string | null;
+  first_air_date?: string | null;
+  last_air_date?: string | null;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  overview?: string | null;
+  genres?: TmdbGenre[];
+  vote_average?: number | null;
+  popularity?: number | null;
+  number_of_seasons?: number | null;
+  number_of_episodes?: number | null;
+  status?: string | null;
+  /** In the base /tv/{id} response natively — unlike a movie's directors,
+   *  no append_to_response=credits fetch is needed for this. */
+  created_by?: TmdbCreatedBy[];
 };
 
 export type TmdbCrewMember = {

@@ -102,8 +102,12 @@ export function isStale(syncedAt: string): boolean {
  * enriched_at rather than runtime !== null — some films genuinely have no
  * runtime in TMDB (shorts, some documentaries), and treating that as "not
  * fully detailed" would refetch them forever without ever gaining anything.
+ *
+ * Typed to the minimal shape it actually reads (not FilmRow) so it's
+ * genuinely reusable — lib/tmdb/get-show-detail.ts calls this on a
+ * ShowRow, which has no other field in common with FilmRow.
  */
-export function hasFullDetail(row: FilmRow): boolean {
+export function hasFullDetail(row: { enriched_at: string | null }): boolean {
   return row.enriched_at !== null;
 }
 

@@ -29,9 +29,44 @@ export type FilmDetail = {
   tmdbRating: number | null;
 };
 
+/** Show equivalents of FilmSummary/FilmDetail — field-name-aligned to
+ *  the film shapes wherever the underlying concept is the same, so
+ *  components written for films (PosterTile, search result rows) don't
+ *  need show-specific branching to render one. */
+export type ShowSummary = {
+  id: number;
+  title: string;
+  year: number | null;
+  posterPath: string | null;
+  seen: boolean;
+  lastWatchedOn: string | null;
+  lastWatchedPrecision: WatchPrecision | null;
+  lastWatchedEraLabel: string | null;
+  hasPosterWallEntry: boolean;
+};
+
+export type ShowDetail = {
+  id: number;
+  title: string;
+  originalTitle: string | null;
+  /** First-air year — a show has no single release year. */
+  year: number | null;
+  overview: string | null;
+  posterPath: string | null;
+  backdropPath: string | null;
+  /** TV's created_by, not a director list. */
+  creators: string[];
+  genres: string[];
+  tmdbRating: number | null;
+  numberOfSeasons: number | null;
+  numberOfEpisodes: number | null;
+  status: string | null;
+};
+
 export type LibrarySort = "recent_added" | "recent_watched" | "release_year" | "rating" | "title";
 
 export type LibraryFilm = {
+  mediaType: "movie";
   id: number;
   title: string;
   year: number | null;
@@ -40,6 +75,25 @@ export type LibraryFilm = {
   lastWatchedOn: string | null;
   rating: number | null;
 };
+
+/** Show-level tracking (§ TV support plan) — one row per viewing, same
+ *  fuzzy-date/rating model as a film, not per-episode. Field names match
+ *  LibraryFilm exactly (title/year, not name/firstAirYear) so UI built
+ *  for films — LibraryTile, PosterTile — renders shows unmodified. */
+export type LibraryShow = {
+  mediaType: "show";
+  id: number;
+  title: string;
+  year: number | null;
+  posterPath: string | null;
+  watchCount: number;
+  lastWatchedOn: string | null;
+  rating: number | null;
+};
+
+/** What /api/library actually returns once mediaType=all merges both
+ *  sources — narrow on .mediaType to get the specific shape back. */
+export type LibraryItem = LibraryFilm | LibraryShow;
 
 export type FilterOption<T> = { value: T; count: number };
 
@@ -108,6 +162,21 @@ export type WatchEntry = {
   company: string | null;
   createdAt: string;
   tags: string[];
+};
+
+/** Show-level viewing entry — "I watched this show", the same fuzzy-date
+ *  model as WatchEntry. No tags: show tagging is out of scope for now. */
+export type ShowWatchEntry = {
+  id: string;
+  showId: number;
+  watchedOn: string | null;
+  precision: WatchPrecision;
+  eraLabel: string | null;
+  rating: number | null;
+  note: string | null;
+  place: string | null;
+  company: string | null;
+  createdAt: string;
 };
 
 export type Stats = {

@@ -2,9 +2,15 @@
 
 /**
  * Minimal IndexedDB wrapper for the poster wall's offline queue (§9).
- * One record per film id (a later toggle overwrites an earlier one, same
- * "latest wins" semantics as the in-memory queue), so this only ever
- * holds what still needs to reach the server.
+ * One record per (mediaType, itemId) pair (a later toggle overwrites an
+ * earlier one, same "latest wins" semantics as the in-memory queue), so
+ * this only ever holds what still needs to reach the server.
+ *
+ * `id` must be namespaced by mediaType, not a bare stringified itemId —
+ * movie and TV TMDB ids are separate namespaces (the same number can be
+ * two unrelated titles), so a movie wall and a show wall toggling the
+ * same numeric id offline would silently overwrite each other's queued
+ * change under a bare-id key.
  */
 
 const DB_NAME = "seen-offline";
@@ -13,7 +19,8 @@ const DB_VERSION = 1;
 
 export type QueuedChange = {
   id: string;
-  filmId: number;
+  mediaType: "movie" | "show";
+  itemId: number;
   action: "add" | "remove";
   eraLabel: string | null;
 };

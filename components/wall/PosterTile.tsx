@@ -6,13 +6,15 @@ import { Check } from "lucide-react";
 import { clsx } from "clsx";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { posterUrl } from "@/lib/images";
-import type { FilmSummary } from "@/lib/types";
+import type { FilmSummary, ShowSummary } from "@/lib/types";
 
 const SPRING = { type: "spring", stiffness: 320, damping: 32, mass: 0.9 } as const;
 const LONG_PRESS_MS = 500;
 
 type PosterTileProps = {
-  film: FilmSummary;
+  // ShowSummary is field-aligned to FilmSummary (same names/types) so
+  // this renders either without branching — see lib/types.ts.
+  film: FilmSummary | ShowSummary;
   selected: boolean;
   /** False when seen only via a manual/import entry — the checkmark is
    *  shown but muted, and the tile doesn't respond to taps (§9: the wall

@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/enrich-films",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/enrich-shows",
+      "schedule": "0 5 * * *"
     }
   ]
 }

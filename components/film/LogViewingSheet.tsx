@@ -7,7 +7,21 @@ import { StarRating } from "@/components/ui/StarRating";
 import { TagInput } from "@/components/ui/TagInput";
 import { Button } from "@/components/ui/Button";
 import { copy } from "@/lib/copy";
-import type { WatchEntry, WatchPrecision } from "@/lib/types";
+import type { WatchPrecision } from "@/lib/types";
+
+/** The subset of WatchEntry/ShowWatchEntry this form actually reads —
+ *  both satisfy it structurally (tags is optional, so ShowWatchEntry,
+ *  which has no tags field at all, still qualifies). */
+type LoggableEntry = {
+  watchedOn: string | null;
+  precision: WatchPrecision;
+  eraLabel: string | null;
+  rating: number | null;
+  note: string | null;
+  place: string | null;
+  company: string | null;
+  tags?: string[];
+};
 
 type WhenMode = "today" | "pickDate" | "year" | "roughly" | "unknown";
 
@@ -50,7 +64,7 @@ type FormState = {
   tags: string[];
 };
 
-function initialStateFor(entry?: WatchEntry): FormState {
+function initialStateFor(entry?: LoggableEntry): FormState {
   if (!entry) {
     return {
       whenMode: "today",
@@ -97,21 +111,29 @@ type LogViewingSheetProps = {
   /** When set, the sheet edits this entry instead of creating a new one —
    *  pass a stable `key` (e.g. the entry id) from the parent so switching
    *  between entries or add/edit remounts with fresh initial state. */
-  initialEntry?: WatchEntry;
+  initialEntry?: LoggableEntry;
+  /** Off for shows — tagging is film-only for now (§ TV support plan). */
+  showTags?: boolean;
 };
 
-export function LogViewingSheet({ open, onClose, onSubmit, initialEntry }: LogViewingSheetProps) {
+export function LogViewingSheet({
+  open,
+  onClose,
+  onSubmit,
+  initialEntry,
+  showTags = true,
+}: LogViewingSheetProps) {
   const [state, setState] = useState<FormState>(() => initialStateFor(initialEntry));
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const isEditing = Boolean(initialEntry);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !showTags) return;
     fetch("/api/tags")
       .then((res) => (res.ok ? res.json() : { tags: [] }))
       .then((data: { tags: string[] }) => setTagSuggestions(data.tags))
       .catch(() => setTagSuggestions([]));
-  }, [open]);
+  }, [open, showTags]);
 
   const canSubmit = state.whenMode !== "pickDate" || state.dateValue.length > 0;
 
@@ -249,14 +271,16 @@ export function LogViewingSheet({ open, onClose, onSubmit, initialEntry }: LogVi
           />
         </div>
 
-        <div>
-          <p className="text-footnote text-label-2 mb-2">{copy.logViewing.tagsLabel}</p>
-          <TagInput
-            value={state.tags}
-            onChange={(tags) => update("tags", tags)}
-            suggestions={tagSuggestions}
-          />
-        </div>
+        {showTags && (
+          <div>
+            <p className="text-footnote text-label-2 mb-2">{copy.logViewing.tagsLabel}</p>
+            <TagInput
+              value={state.tags}
+              onChange={(tags) => update("tags", tags)}
+              suggestions={tagSuggestions}
+            />
+          </div>
+        )}
 
         <MoreFields state={state} update={update} />
 

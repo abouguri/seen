@@ -6,32 +6,63 @@ import { PosterTile } from "@/components/wall/PosterTile";
 import { SkeletonTile } from "@/components/wall/SkeletonTile";
 import { AddBar } from "@/components/wall/AddBar";
 import { usePosterWall } from "@/components/wall/use-poster-wall";
+import { Segmented } from "@/components/ui/Segmented";
 import { Button } from "@/components/ui/Button";
 import { copy } from "@/lib/copy";
 import { useToast } from "@/components/ui/Toast";
 import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
 import { useRovingGrid } from "@/components/shared/useRovingGrid";
-import type { FilmSummary } from "@/lib/types";
+import type { FilmSummary, ShowSummary } from "@/lib/types";
 
 const SKELETON_COUNT = 12;
+type Mode = "movie" | "show";
 
 /**
- * TMDB's discover pagination can return the same film on adjacent pages
- * (popularity-score ties near a page boundary) — deduping keeps film.id
+ * TMDB's discover pagination can return the same title on adjacent pages
+ * (popularity-score ties near a page boundary) — deduping keeps id
  * a valid React key and avoids ever rendering the same tile twice.
  */
-function dedupeById(films: FilmSummary[]): FilmSummary[] {
+function dedupeById<T extends { id: number }>(items: T[]): T[] {
   const seen = new Set<number>();
-  return films.filter((film) => {
-    if (seen.has(film.id)) return false;
-    seen.add(film.id);
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
     return true;
   });
 }
 
 export default function AddPage() {
+  const [mode, setMode] = useState<Mode>("movie");
+
+  return (
+    <div className="flex flex-1 flex-col pb-24 md:pb-8">
+      <div className="pt-4 md:pt-8">
+        <h1 className="text-large-title px-4 md:px-8">{copy.wall.title}</h1>
+        <div className="mt-4 px-4 md:px-8">
+          <Segmented
+            options={[
+              { value: "movie" as const, label: copy.library.filter.movies },
+              { value: "show" as const, label: copy.library.filter.shows },
+            ]}
+            value={mode}
+            onChange={setMode}
+            aria-label={copy.library.filter.typeFieldLabel}
+          />
+        </div>
+      </div>
+      {/* Remounts the whole wall on mode switch — a movie wall and a
+          show wall are genuinely different data sources (different
+          discover endpoint, different TMDB id namespace), and
+          usePosterWall's kind is meant to be fixed for a mounted
+          instance's lifetime, not flipped under it. */}
+      <AddPageContent key={mode} mode={mode} />
+    </div>
+  );
+}
+
+function AddPageContent({ mode }: { mode: Mode }) {
   const [year, setYear] = useState(() => new Date().getFullYear());
-  const [films, setFilms] = useState<FilmSummary[]>([]);
+  const [items, setItems] = useState<(FilmSummary | ShowSummary)[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -39,37 +70,42 @@ export default function AddPage() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const { tiles, mergeSeen, toggle, addedCount, isOffline } = usePosterWall();
+  const { tiles, mergeSeen, toggle, addedCount, isOffline } = usePosterWall(mode);
   const { showToast } = useToast();
   const { columns } = useResponsiveColumns(gridRef);
   const { activeIndex, setActiveIndex, setItemRef, handleKeyDown } = useRovingGrid(
-    films.length,
+    items.length,
     columns,
   );
 
-  const loadFirstPage = useCallback((forYear: number) => {
-    setFilms([]);
-    setPage(1);
-    setHasMore(true);
-    setError(false);
-    setLoading(true);
+  const discoverUrl = mode === "movie" ? "/api/tmdb/discover" : "/api/tmdb/discover-shows";
 
-    fetch(`/api/tmdb/discover?year=${forYear}&page=1`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error();
-        return (await res.json()) as FilmSummary[];
-      })
-      .then((data) => {
-        setFilms(dedupeById(data));
-        mergeSeen(data);
-        setHasMore(data.length > 0);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+  const loadFirstPage = useCallback(
+    (forYear: number) => {
+      setItems([]);
+      setPage(1);
+      setHasMore(true);
+      setError(false);
+      setLoading(true);
+
+      fetch(`${discoverUrl}?year=${forYear}&page=1`)
+        .then(async (res) => {
+          if (!res.ok) throw new Error();
+          return (await res.json()) as (FilmSummary | ShowSummary)[];
+        })
+        .then((data) => {
+          setItems(dedupeById(data));
+          mergeSeen(data);
+          setHasMore(data.length > 0);
+        })
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+    },
     // mergeSeen is stable in practice (from a hook without memo) — omitting
     // it from deps avoids re-running this on every unrelated render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    [discoverUrl],
+  );
 
   useEffect(() => {
     loadFirstPage(year);
@@ -81,13 +117,13 @@ export default function AddPage() {
     setLoading(true);
     const nextPage = page + 1;
 
-    fetch(`/api/tmdb/discover?year=${year}&page=${nextPage}`)
+    fetch(`${discoverUrl}?year=${year}&page=${nextPage}`)
       .then(async (res) => {
         if (!res.ok) throw new Error();
-        return (await res.json()) as FilmSummary[];
+        return (await res.json()) as (FilmSummary | ShowSummary)[];
       })
       .then((data) => {
-        setFilms((prev) => dedupeById([...prev, ...data]));
+        setItems((prev) => dedupeById([...prev, ...data]));
         mergeSeen(data);
         setPage(nextPage);
         setHasMore(data.length > 0);
@@ -101,7 +137,7 @@ export default function AddPage() {
       })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, hasMore, page, year]);
+  }, [loading, hasMore, page, year, discoverUrl]);
 
   useEffect(() => {
     if (!hasMore || loading || error) return;
@@ -119,20 +155,17 @@ export default function AddPage() {
   }, [hasMore, loading, error, loadNextPage]);
 
   return (
-    <div className="flex flex-1 flex-col pb-24 md:pb-8">
-      <div className="pt-4 md:pt-8">
-        <h1 className="text-large-title px-4 md:px-8">{copy.wall.title}</h1>
-        <div className="mt-4">
-          <YearScroller year={year} onChange={setYear} />
-        </div>
-        {isOffline && (
-          <p className="text-footnote text-label-2 bg-surface-1 mx-4 mt-4 rounded-md px-3 py-2 md:mx-8">
-            {copy.wall.offline}
-          </p>
-        )}
+    <>
+      <div className="mt-4">
+        <YearScroller year={year} onChange={setYear} />
       </div>
+      {isOffline && (
+        <p className="text-footnote text-label-2 bg-surface-1 mx-4 mt-4 rounded-md px-3 py-2 md:mx-8">
+          {copy.wall.offline}
+        </p>
+      )}
 
-      {error && films.length === 0 ? (
+      {error && items.length === 0 ? (
         <div className="mt-8 flex flex-col items-center gap-4 px-4 text-center">
           <p className="text-body text-danger max-w-[32ch]">{copy.errors.tmdbUnreachable}</p>
           <Button variant="secondary" onClick={() => loadFirstPage(year)}>
@@ -145,22 +178,22 @@ export default function AddPage() {
             ref={gridRef}
             className="grid grid-cols-3 gap-2 px-4 pt-4 sm:grid-cols-4 md:px-8 lg:grid-cols-6 xl:grid-cols-8"
           >
-            {films.map((film, index) => {
-              const tile = tiles.get(film.id) ?? {
-                selected: film.seen,
-                removable: film.hasPosterWallEntry,
+            {items.map((item, index) => {
+              const tile = tiles.get(item.id) ?? {
+                selected: item.seen,
+                removable: item.hasPosterWallEntry,
               };
               return (
                 <PosterTile
-                  key={film.id}
-                  film={film}
+                  key={item.id}
+                  film={item}
                   tileRef={setItemRef(index)}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onKeyDown={(event) => handleKeyDown(event, index)}
                   onFocus={() => setActiveIndex(index)}
                   selected={tile.selected}
                   removable={tile.removable}
-                  onToggle={(filmId) => toggle(filmId, year)}
+                  onToggle={(id) => toggle(id, year)}
                 />
               );
             })}
@@ -170,7 +203,7 @@ export default function AddPage() {
               ))}
           </div>
 
-          {!loading && films.length === 0 && (
+          {!loading && items.length === 0 && (
             <p className="text-body text-label-2 mt-8 px-4 text-center">{copy.wall.noResults}</p>
           )}
 
@@ -179,6 +212,6 @@ export default function AddPage() {
       )}
 
       <AddBar count={addedCount} />
-    </div>
+    </>
   );
 }

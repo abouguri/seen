@@ -6,17 +6,17 @@ import Image from "next/image";
 import { Plus } from "lucide-react";
 import { posterUrl } from "@/lib/images";
 import { Stars } from "@/components/ui/Stars";
-import type { LibraryFilm } from "@/lib/types";
+import type { LibraryItem } from "@/lib/types";
 
 const LONG_PRESS_MS = 500;
 
 type LibraryTileProps = {
-  film: LibraryFilm;
-  onContextMenu: (film: LibraryFilm, x: number, y: number) => void;
+  film: LibraryItem;
+  onContextMenu: (film: LibraryItem, x: number, y: number) => void;
   /** Opens the log-viewing sheet directly — the hover/focus quick-action,
    *  a shortcut to the same thing the context menu's "Log another
    *  viewing" item does. */
-  onQuickLog: (film: LibraryFilm) => void;
+  onQuickLog: (film: LibraryItem) => void;
   /** Roving-tabindex grid traversal (§7.7) — only the active tile is a
    *  Tab stop; arrow keys move it. The quick-action button mirrors this:
    *  it's only in the tab order when its own tile is the active one, so
@@ -58,7 +58,7 @@ export function LibraryTile({
 
   const url = posterUrl(film.posterPath, "w342");
   const alt = `${film.title} (${film.year ?? "unknown year"}) poster`;
-  const href = `/film/${film.id}`;
+  const href = film.mediaType === "movie" ? `/film/${film.id}` : `/show/${film.id}`;
 
   function handlePointerDown(event: React.PointerEvent) {
     if (event.pointerType !== "touch") return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useCallback, useMemo, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
 import { queueOfflineChange, getQueuedChanges, clearQueuedChanges } from "@/lib/offline/db";
@@ -37,8 +37,19 @@ type PendingChange = {
  * automatically once the browser reports `online` again. Reverting on
  * connectivity loss would be wrong: the user tapped deliberately, and
  * expects it to land once they're back.
+ *
+ * `kind` selects movie vs show — same optimistic/offline machinery for
+ * both (delicate enough that duplicating it risks the two copies
+ * drifting), just a different API endpoint and offline-queue namespace.
+ * TMDB movie and TV ids are separate namespaces, so the queue key must
+ * carry `kind` too, not just the bare id — see lib/offline/db.ts.
  */
-export function usePosterWall() {
+export function usePosterWall(kind: "movie" | "show" = "movie") {
+  const endpoint = kind === "movie" ? "/api/entries" : "/api/show-entries";
+  // Stable per kind (not recreated every render) so it's safe to list as
+  // an effect dependency below without resetting the flush interval on
+  // every unrelated re-render.
+  const queueKey = useCallback((id: number) => `${kind}:${id}`, [kind]);
   const [tiles, setTiles] = useState<Map<number, TileState>>(new Map());
   const [isOffline, setIsOffline] = useState(false);
   const isOfflineRef = useRef(false);
@@ -55,19 +66,20 @@ export function usePosterWall() {
     // happen" until the retry succeeds.
     getQueuedChanges()
       .then((queued) => {
-        if (queued.length === 0) return;
+        const mine = queued.filter((change) => change.mediaType === kind);
+        if (mine.length === 0) return;
         setTiles((prev) => {
           const next = new Map(prev);
-          for (const change of queued) {
-            next.set(change.filmId, {
+          for (const change of mine) {
+            next.set(change.itemId, {
               selected: change.action === "add",
               removable: change.action === "add",
             });
           }
           return next;
         });
-        for (const change of queued) {
-          queueRef.current.set(change.filmId, {
+        for (const change of mine) {
+          queueRef.current.set(change.itemId, {
             action: change.action,
             eraLabel: change.eraLabel,
             optimisticValue: {
@@ -93,6 +105,10 @@ export function usePosterWall() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
+    // Mount-once by design — kind is fixed for the lifetime of a mounted
+    // wall instance (the Movies/Shows toggle remounts the whole wall via
+    // key, it never flips kind on a live instance).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function mergeSeen(films: { id: number; seen: boolean; hasPosterWallEntry: boolean }[]) {
@@ -131,8 +147,9 @@ export function usePosterWall() {
 
     if (isOfflineRef.current) {
       queueOfflineChange({
-        id: String(filmId),
-        filmId,
+        id: queueKey(filmId),
+        mediaType: kind,
+        itemId: filmId,
         action: change.action,
         eraLabel: change.eraLabel,
       }).catch(() => {});
@@ -159,13 +176,18 @@ export function usePosterWall() {
         .map(([filmId]) => filmId);
 
       try {
-        const res = await fetch("/api/entries?bulk=1", {
+        const res = await fetch(`${endpoint}?bulk=1`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ add, remove }),
+          body: JSON.stringify({
+            add: add.map(({ filmId, eraLabel }) =>
+              kind === "movie" ? { filmId, eraLabel } : { showId: filmId, eraLabel },
+            ),
+            remove,
+          }),
         });
         if (!res.ok) throw new Error("flush failed");
-        await clearQueuedChanges([...batch.keys()].map(String)).catch(() => {});
+        await clearQueuedChanges([...batch.keys()].map(queueKey)).catch(() => {});
       } catch {
         if (typeof navigator !== "undefined" && !navigator.onLine) {
           // Lost connectivity mid-flush — not a server error. Persist and
@@ -175,8 +197,9 @@ export function usePosterWall() {
           setIsOffline(true);
           for (const [filmId, change] of batch) {
             queueOfflineChange({
-              id: String(filmId),
-              filmId,
+              id: queueKey(filmId),
+              mediaType: kind,
+              itemId: filmId,
               action: change.action,
               eraLabel: change.eraLabel,
             }).catch(() => {});
@@ -210,7 +233,7 @@ export function usePosterWall() {
     }, FLUSH_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [showToast]);
+  }, [showToast, kind, endpoint, queueKey]);
 
   const addedCount = useMemo(
     () => [...tiles.values()].filter((t) => t.selected && t.removable).length,

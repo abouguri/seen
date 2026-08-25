@@ -17,7 +17,7 @@ import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
-import type { LibraryFilm, LibrarySort } from "@/lib/types";
+import type { LibraryItem, LibrarySort } from "@/lib/types";
 
 const GAP_PX = 8;
 const VIRTUALIZE_THRESHOLD = 300;
@@ -34,13 +34,22 @@ function parseSort(value: string | null): LibrarySort {
 function parseFilters(params: URLSearchParams): LibraryFilterState {
   const decade = params.get("decade");
   const rated = params.get("rated");
+  const mediaType = params.get("mediaType");
   return {
+    mediaType: mediaType === "movie" || mediaType === "show" || mediaType === "all" ? mediaType : undefined,
     decade: decade ? Number(decade) : undefined,
     genre: params.get("genre") ?? undefined,
     director: params.get("director") ?? undefined,
     tag: params.get("tag") ?? undefined,
     rated: rated === "rated" || rated === "unrated" ? rated : undefined,
   };
+}
+
+function countLabel(mediaType: LibraryFilterState["mediaType"], total: number): string {
+  const suffix = total === 1 ? "" : "s";
+  if (mediaType === "show") return `show${suffix}`;
+  if (mediaType === "movie") return `film${suffix}`;
+  return `title${suffix}`;
 }
 
 function LibraryContent() {
@@ -68,6 +77,7 @@ function LibraryContent() {
 
   function setFilters(next: LibraryFilterState) {
     updateParams({
+      mediaType: next.mediaType && next.mediaType !== "all" ? next.mediaType : undefined,
       decade: next.decade !== undefined ? String(next.decade) : undefined,
       genre: next.genre,
       director: next.director,
@@ -76,9 +86,9 @@ function LibraryContent() {
     });
   }
 
-  const [menu, setMenu] = useState<{ film: LibraryFilm; x: number; y: number } | null>(null);
-  const [logFilm, setLogFilm] = useState<LibraryFilm | null>(null);
-  const [removeFilm, setRemoveFilm] = useState<LibraryFilm | null>(null);
+  const [menu, setMenu] = useState<{ film: LibraryItem; x: number; y: number } | null>(null);
+  const [logItem, setLogItem] = useState<LibraryItem | null>(null);
+  const [removeItem, setRemoveItem] = useState<LibraryItem | null>(null);
 
   const { films, total, loading, error, loadMore, reload, removeFilm: removeFilmFromList } =
     useLibraryData(sort, filters);
@@ -133,12 +143,18 @@ function LibraryContent() {
     if (lastVisibleRow >= rowCount - 3) loadMore();
   }
 
+  // One mutation for both media types — POSTs to /api/entries or
+  // /api/show-entries depending on the item, mirroring the same body
+  // shape each of those routes expects.
   const logMutation = useMutation({
-    mutationFn: async (input: LogViewingInput & { filmId: number }) => {
-      const res = await fetch("/api/entries", {
+    mutationFn: async ({ item, input }: { item: LibraryItem; input: LogViewingInput }) => {
+      const endpoint = item.mediaType === "movie" ? "/api/entries" : "/api/show-entries";
+      const body =
+        item.mediaType === "movie" ? { ...input, filmId: item.id } : { ...input, showId: item.id };
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(copy.errors.entrySaveFailed);
       return res.json();
@@ -147,13 +163,14 @@ function LibraryContent() {
   });
 
   const removeMutation = useMutation({
-    mutationFn: async (filmId: number) => {
-      const res = await fetch(`/api/library/${filmId}`, { method: "DELETE" });
+    mutationFn: async (item: LibraryItem) => {
+      const query = item.mediaType === "show" ? "?mediaType=show" : "";
+      const res = await fetch(`/api/library/${item.id}${query}`, { method: "DELETE" });
       if (!res.ok) throw new Error(copy.errors.entrySaveFailed);
       return res.json();
     },
-    onMutate: async (filmId: number) => {
-      removeFilmFromList(filmId);
+    onMutate: async (item: LibraryItem) => {
+      removeFilmFromList(item.mediaType, item.id);
     },
     onError: () => {
       showToast(copy.errors.entrySaveFailed);
@@ -165,22 +182,23 @@ function LibraryContent() {
     ? [
         {
           label: copy.library.contextMenu.logAnother,
-          onSelect: () => setLogFilm(menu.film),
+          onSelect: () => setLogItem(menu.film),
         },
         {
           label: copy.library.contextMenu.edit,
-          onSelect: () => router.push(`/film/${menu.film.id}`),
+          onSelect: () =>
+            router.push(menu.film.mediaType === "movie" ? `/film/${menu.film.id}` : `/show/${menu.film.id}`),
         },
         {
           label: copy.library.contextMenu.remove,
-          onSelect: () => setRemoveFilm(menu.film),
+          onSelect: () => setRemoveItem(menu.film),
           destructive: true,
         },
       ]
     : [];
 
   const rows = useMemo(() => {
-    const result: LibraryFilm[][] = [];
+    const result: LibraryItem[][] = [];
     for (let i = 0; i < films.length; i += columns) {
       result.push(films.slice(i, i + columns));
     }
@@ -199,7 +217,7 @@ function LibraryContent() {
 
         <div className="flex items-center justify-between gap-3 px-4 pb-3 md:px-8">
           <p className="text-subhead text-label-2 shrink-0">
-            {total} film{total === 1 ? "" : "s"}
+            {total} {countLabel(filters.mediaType, total)}
           </p>
           <SortControl value={sort} onChange={setSort} />
         </div>
@@ -250,7 +268,7 @@ function LibraryContent() {
                           key={film.id}
                           film={film}
                           onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
-                          onQuickLog={(f) => setLogFilm(f)}
+                          onQuickLog={(f) => setLogItem(f)}
                           tileRef={setItemRef(index)}
                           tabIndex={index === activeIndex ? 0 : -1}
                           onKeyDown={(event) => handleKeyDown(event, index)}
@@ -272,7 +290,7 @@ function LibraryContent() {
                   key={film.id}
                   film={film}
                   onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
-                  onQuickLog={(f) => setLogFilm(f)}
+                  onQuickLog={(f) => setLogItem(f)}
                   tileRef={setItemRef(index)}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onKeyDown={(event) => handleKeyDown(event, index)}
@@ -291,27 +309,28 @@ function LibraryContent() {
       )}
 
 
-      {logFilm && (
+      {logItem && (
         <LogViewingSheet
-          key={logFilm.id}
-          open={Boolean(logFilm)}
-          onClose={() => setLogFilm(null)}
+          key={`${logItem.mediaType}-${logItem.id}`}
+          open={Boolean(logItem)}
+          onClose={() => setLogItem(null)}
           onSubmit={(input) => {
-            logMutation.mutate({ ...input, filmId: logFilm.id });
-            setLogFilm(null);
+            logMutation.mutate({ item: logItem, input });
+            setLogItem(null);
           }}
+          showTags={logItem.mediaType === "movie"}
         />
       )}
 
       <ConfirmSheet
-        open={Boolean(removeFilm)}
+        open={Boolean(removeItem)}
         title={
-          removeFilm ? copy.library.removeConfirmTitle(removeFilm.title, removeFilm.watchCount) : ""
+          removeItem ? copy.library.removeConfirmTitle(removeItem.title, removeItem.watchCount) : ""
         }
         body={copy.library.removeConfirmBody}
         confirmLabel={copy.library.removeAction}
-        onConfirm={() => removeFilm && removeMutation.mutate(removeFilm.id)}
-        onClose={() => setRemoveFilm(null)}
+        onConfirm={() => removeItem && removeMutation.mutate(removeItem)}
+        onClose={() => setRemoveItem(null)}
       />
     </div>
   );

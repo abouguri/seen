@@ -13,6 +13,7 @@ import { useResponsiveColumns } from "@/components/library/useResponsiveColumns"
 import { useRovingGrid } from "@/components/shared/useRovingGrid";
 import { useCollapsingHeader, StickyInlineBar, LargeTitle } from "@/components/library/CollapsingHeader";
 import { LogViewingSheet, type LogViewingInput } from "@/components/film/LogViewingSheet";
+import { DetailModal } from "@/components/library/DetailModal";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -87,6 +88,7 @@ function LibraryContent() {
   }
 
   const [menu, setMenu] = useState<{ film: LibraryItem; x: number; y: number } | null>(null);
+  const [openItem, setOpenItem] = useState<LibraryItem | null>(null);
   const [logItem, setLogItem] = useState<LibraryItem | null>(null);
   const [removeItem, setRemoveItem] = useState<LibraryItem | null>(null);
 
@@ -186,8 +188,7 @@ function LibraryContent() {
         },
         {
           label: copy.library.contextMenu.edit,
-          onSelect: () =>
-            router.push(menu.film.mediaType === "movie" ? `/film/${menu.film.id}` : `/show/${menu.film.id}`),
+          onSelect: () => setOpenItem(menu.film),
         },
         {
           label: copy.library.contextMenu.remove,
@@ -268,6 +269,7 @@ function LibraryContent() {
                           key={film.id}
                           film={film}
                           onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                          onOpen={(f) => setOpenItem(f)}
                           onQuickLog={(f) => setLogItem(f)}
                           tileRef={setItemRef(index)}
                           tabIndex={index === activeIndex ? 0 : -1}
@@ -290,6 +292,7 @@ function LibraryContent() {
                   key={film.id}
                   film={film}
                   onContextMenu={(f, x, y) => setMenu({ film: f, x, y })}
+                  onOpen={(f) => setOpenItem(f)}
                   onQuickLog={(f) => setLogItem(f)}
                   tileRef={setItemRef(index)}
                   tabIndex={index === activeIndex ? 0 : -1}
@@ -308,6 +311,7 @@ function LibraryContent() {
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
       )}
 
+      <DetailModal item={openItem} onClose={() => setOpenItem(null)} />
 
       {logItem && (
         <LogViewingSheet

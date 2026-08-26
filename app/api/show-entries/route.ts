@@ -30,6 +30,61 @@ const bulkBodySchema = z.object({
   remove: z.array(z.number().int().positive()),
 });
 
+const getQuerySchema = z.object({ showId: z.coerce.number().int().positive() });
+
+/** Mirrors GET in app/api/entries/route.ts — no tags. */
+export async function GET(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { error: { code: "unauthorized", message: copy.errors.signInRequired } },
+      { status: 401 },
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const parsed = getQuerySchema.safeParse({ showId: searchParams.get("showId") });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: { code: "invalid_query", message: copy.errors.libraryLoadFailed } },
+      { status: 400 },
+    );
+  }
+
+  const { data: entryRows, error } = await supabase
+    .from("show_watch_entries")
+    .select("id, show_id, watched_on, precision, era_label, rating, note, place, company, created_at")
+    .eq("show_id", parsed.data.showId)
+    .order("watched_on", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json(
+      { error: { code: "query_failed", message: copy.errors.libraryLoadFailed } },
+      { status: 500 },
+    );
+  }
+
+  const entries: ShowWatchEntry[] = (entryRows ?? []).map((row) => ({
+    id: row.id,
+    showId: row.show_id,
+    watchedOn: row.watched_on,
+    precision: row.precision,
+    eraLabel: row.era_label,
+    rating: row.rating,
+    note: row.note,
+    place: row.place,
+    company: row.company,
+    createdAt: row.created_at,
+  }));
+
+  return NextResponse.json(entries);
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {

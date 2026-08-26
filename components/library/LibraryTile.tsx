@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { posterUrl } from "@/lib/images";
@@ -13,6 +12,9 @@ const LONG_PRESS_MS = 500;
 type LibraryTileProps = {
   film: LibraryItem;
   onContextMenu: (film: LibraryItem, x: number, y: number) => void;
+  /** Opens the detail modal — DetailModal, not a page navigation (see
+   *  components/library/DetailModal.tsx for why). */
+  onOpen: (film: LibraryItem) => void;
   /** Opens the log-viewing sheet directly — the hover/focus quick-action,
    *  a shortcut to the same thing the context menu's "Log another
    *  viewing" item does. */
@@ -28,13 +30,15 @@ type LibraryTileProps = {
 };
 
 /**
- * Tapping the poster navigates into film detail with a shared-element
- * transition (§7.4, the app's one showpiece animation); long-press/
- * right-click opens the context menu instead of navigating. Hover/focus
- * lifts the poster (SEEN Interaction Plan §3.3) and reveals a quick-log
- * button — deliberately a translateY lift, not a scale-up: growing a
- * tile in a dense "things I've already watched" grid shoves its
- * neighbours around and implies "preview this."
+ * Tapping the poster opens the detail modal in place — a full page
+ * navigation here was a real perceived-latency complaint (new route,
+ * new RSC payload, a blank moment before anything appears), and the
+ * modal's poster/title are already known from this very grid item, so
+ * it opens with zero fetch instead. Long-press/right-click opens the
+ * context menu instead. Hover/focus lifts the poster (SEEN Interaction
+ * Plan §3.3) and reveals a quick-log button — deliberately a translateY
+ * lift, not a scale-up: growing a tile in a dense "things I've already
+ * watched" grid shoves its neighbours around and implies "preview this."
  *
  * The quick-log button is a DOM *sibling* of the poster button, not a
  * child of it — nesting a real or ARIA-faked button inside a native
@@ -44,6 +48,7 @@ type LibraryTileProps = {
 export function LibraryTile({
   film,
   onContextMenu,
+  onOpen,
   onQuickLog,
   tabIndex,
   onKeyDown,
@@ -51,14 +56,12 @@ export function LibraryTile({
   tileRef,
 }: LibraryTileProps) {
   const isActive = tabIndex === 0;
-  const router = useRouter();
   const imgRef = useRef<HTMLDivElement>(null);
   const isLongPress = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const url = posterUrl(film.posterPath, "w342");
   const alt = `${film.title} (${film.year ?? "unknown year"}) poster`;
-  const href = film.mediaType === "movie" ? `/film/${film.id}` : `/show/${film.id}`;
 
   function handlePointerDown(event: React.PointerEvent) {
     if (event.pointerType !== "touch") return;
@@ -75,41 +78,12 @@ export function LibraryTile({
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
   }
 
-  function navigate() {
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const supportsViewTransitions =
-      typeof document !== "undefined" && "startViewTransition" in document;
-
-    if (!supportsViewTransitions) {
-      router.push(href);
-      return;
-    }
-
-    // Reduced motion: still use the View Transition API so navigation
-    // gets the browser's default full-page crossfade (shortened to
-    // 120ms in globals.css) — but skip naming the poster, so there's no
-    // shape/position morph, only that plain opacity fade (§7.4).
-    if (!reduceMotion && imgRef.current) {
-      imgRef.current.style.viewTransitionName = "shared-poster";
-    }
-
-    document.startViewTransition(() => {
-      return new Promise<void>((resolve) => {
-        router.push(href);
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-      });
-    });
-  }
-
   function handleClick() {
     if (isLongPress.current) {
       isLongPress.current = false;
       return;
     }
-    navigate();
+    onOpen(film);
   }
 
   function handleContextMenu(event: React.MouseEvent) {
@@ -132,7 +106,7 @@ export function LibraryTile({
           onPointerUp={clearLongPress}
           onPointerLeave={clearLongPress}
           onPointerCancel={clearLongPress}
-          onMouseEnter={() => router.prefetch(href)}
+          aria-haspopup="dialog"
           aria-label={film.title}
           className="focus-visible:outline-accent relative block aspect-2/3 w-full overflow-hidden rounded-sm outline-offset-2"
         >

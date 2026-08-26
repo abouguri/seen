@@ -3,8 +3,74 @@ import { z } from "zod";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { copy } from "@/lib/copy";
-import { setEntryTags } from "@/lib/tags/resolve";
+import { setEntryTags, getEntryTags } from "@/lib/tags/resolve";
 import type { WatchEntry } from "@/lib/types";
+
+const getQuerySchema = z.object({ filmId: z.coerce.number().int().positive() });
+
+/**
+ * Lists one film's viewing history — the film detail page already does
+ * this as a direct server-side query; this is the same query exposed as
+ * JSON, for the library's detail modal (components/library/DetailModal.tsx),
+ * which fetches client-side instead of rendering a full page.
+ */
+export async function GET(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { error: { code: "unauthorized", message: copy.errors.signInRequired } },
+      { status: 401 },
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const parsed = getQuerySchema.safeParse({ filmId: searchParams.get("filmId") });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: { code: "invalid_query", message: copy.errors.libraryLoadFailed } },
+      { status: 400 },
+    );
+  }
+
+  const { data: entryRows, error } = await supabase
+    .from("watch_entries")
+    .select("id, film_id, watched_on, precision, era_label, rating, note, place, company, created_at")
+    .eq("film_id", parsed.data.filmId)
+    .order("watched_on", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json(
+      { error: { code: "query_failed", message: copy.errors.libraryLoadFailed } },
+      { status: 500 },
+    );
+  }
+
+  const tagsByEntry = await getEntryTags(
+    supabase,
+    (entryRows ?? []).map((row) => row.id),
+  );
+
+  const entries: WatchEntry[] = (entryRows ?? []).map((row) => ({
+    id: row.id,
+    filmId: row.film_id,
+    watchedOn: row.watched_on,
+    precision: row.precision,
+    eraLabel: row.era_label,
+    rating: row.rating,
+    note: row.note,
+    place: row.place,
+    company: row.company,
+    createdAt: row.created_at,
+    tags: tagsByEntry.get(row.id) ?? [],
+  }));
+
+  return NextResponse.json(entries);
+}
 
 const bodySchema = z.object({
   filmId: z.number().int().positive(),

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
+import { clsx } from "clsx";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
@@ -137,38 +138,72 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-title-2">{copy.film.yourHistory}</h2>
-        <Button onClick={() => setSheetOpen(true)}>{copy.film.logAViewing}</Button>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-display-2">{copy.film.yourHistory}</h2>
+        <Button onClick={() => setSheetOpen(true)} className="shrink-0">
+          {copy.film.logAnother}
+        </Button>
       </div>
 
       {entries.length === 0 ? (
         <p className="text-body text-label-2">{copy.film.noHistoryYet}</p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {entries.map((entry) => (
-            <li key={entry.id} className="border-separator group flex items-start gap-2 border-b pb-4 last:border-0">
+        // A timeline, not a list of cards (SEEN Redesign): a continuous
+        // spine with a node per viewing. The point of this screen is
+        // that a film has been watched more than once over years, and a
+        // stack of equal-weight bordered rows says the opposite. The
+        // spine is decorative — the entries are still a real <ul>, and
+        // each node's date is still its heading.
+        <ul className="relative flex flex-col pl-5.5">
+          <span
+            aria-hidden="true"
+            className="bg-separator-strong absolute top-1.5 bottom-3.5 left-1 w-0.5 rounded-full"
+          />
+          {entries.map((entry, index) => (
+            <li key={entry.id} className="group relative flex items-start gap-2 pb-5.5 last:pb-0">
+              {/* The newest viewing takes the accent, the oldest the
+                  warm secondary, everything between the muted tint —
+                  so a long history reads as a gradient through time
+                  rather than a column of identical dots. */}
+              <span
+                aria-hidden="true"
+                className={clsx(
+                  "ring-surface-1 absolute top-1.5 -left-5.5 h-2.75 w-2.75 rounded-full ring-4",
+                  index === 0
+                    ? "bg-accent"
+                    : index === entries.length - 1
+                      ? "bg-warm"
+                      : "bg-accent-text",
+                )}
+              />
               <button
                 type="button"
                 onClick={() => setEditingEntry(entry)}
-                className="min-w-0 flex-1 text-left"
+                className="focus-visible:outline-accent min-w-0 flex-1 rounded-xs text-left outline-offset-2"
               >
-                <div className="flex items-center gap-3">
-                  <p className="text-headline">{formatWatchedDate(entry)}</p>
-                  {entry.rating !== null && <Stars value={entry.rating} size={14} />}
+                <div className="flex flex-wrap items-baseline gap-2.5">
+                  <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>
+                  {entry.rating !== null && <Stars value={entry.rating} size={13} />}
                 </div>
-                {entry.note && <p className="text-body text-label-2 mt-1">{entry.note}</p>}
+                {entry.note && (
+                  // The note is the one piece of a viewing you actually
+                  // wrote, so it gets the display face — this is the
+                  // only place body-length prose is set in the serif.
+                  <p className="text-label mt-2 font-(family-name:--display) text-[1.1875rem] leading-snug">
+                    {entry.note}
+                  </p>
+                )}
                 {(entry.place || entry.company) && (
-                  <p className="text-footnote text-label-2 mt-1">
+                  <p className="text-footnote text-label-2 mt-1.5">
                     {[entry.place, entry.company].filter(Boolean).join(" · ")}
                   </p>
                 )}
                 {entry.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {entry.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-caption bg-surface-2 text-label-2 rounded-full px-2 py-1"
+                        className="text-caption bg-accent-dim text-accent-text rounded-xs px-2 py-1 font-extrabold"
                       >
                         {tag}
                       </span>

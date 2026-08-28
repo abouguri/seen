@@ -21,6 +21,12 @@ type FilterDropdownProps<T extends string | number> = {
   onChange: (value: T | undefined) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** "filter" (default) tints the trigger once a value is set, because a
+   *  set filter is a state you need to see from across the screen.
+   *  "plain" is for a control that always has a value and so would
+   *  always look tinted — Sort. A permanently-lit chip stops meaning
+   *  anything, and worse, it reads as a filter that's been applied. */
+  tone?: "filter" | "plain";
 };
 
 // Netflix's Genres panel fits 21 options into 194px by going to three
@@ -50,13 +56,14 @@ export function FilterDropdown<T extends string | number>({
   onChange,
   open,
   onOpenChange,
+  tone = "filter",
 }: FilterDropdownProps<T>) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const selected = options.find((o) => o.value === value);
-  const active = selected !== undefined;
+  const active = selected !== undefined && tone === "filter";
   const cols = columnsFor(options.length);
 
   useEffect(() => {
@@ -112,13 +119,19 @@ export function FilterDropdown<T extends string | number>({
           if (!open) focusFirstOption();
         }}
         className={clsx(
-          "text-subhead border-separator flex h-9.5 shrink-0 items-center gap-1.5 rounded-full border px-3.5 font-medium whitespace-nowrap",
+          "text-footnote border-separator flex h-9.5 shrink-0 items-center gap-1.5 rounded-full border px-3.5 font-bold whitespace-nowrap",
           "transition-[background-color,border-color,color] duration-(--t-hover) ease-(--default-transition-timing-function)",
-          open ? "bg-surface-2" : "hover:bg-surface-1",
-          active ? "border-accent text-label" : "text-label-2",
+          // Chip styling per the SEEN Redesign: a set filter fills with
+          // the accent tint and takes the lilac label, so an active
+          // filter reads as a filter and not just a hovered control.
+          active
+            ? "border-accent-text/40 bg-accent-dim text-accent-text"
+            : open
+              ? "bg-surface-2 text-label-2"
+              : "text-label-2 hover:bg-surface-1",
         )}
       >
-        {active ? `${fieldLabel}: ${selected.label}` : fieldLabel}
+        {selected !== undefined ? `${fieldLabel}: ${selected.label}` : fieldLabel}
         <ChevronDown
           size={14}
           strokeWidth={2}
@@ -201,9 +214,16 @@ function Option({
           onSelect();
         }
       }}
-      className="text-body hover:bg-surface-2 focus-visible:outline-accent flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left outline-offset-[-2px] transition-colors duration-(--t-hover)"
+      className="text-body hover:bg-surface-2 focus-visible:outline-accent flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left -outline-offset-2 transition-colors duration-(--t-hover)"
     >
-      <Check size={15} strokeWidth={2.5} className={clsx("text-accent shrink-0", !checked && "invisible")} />
+      {/* --accent-text, not --accent: the fill violet is 2.45:1 on
+          --surface-1 and this tick is the only visual mark of which row
+          is chosen. */}
+      <Check
+        size={15}
+        strokeWidth={2.5}
+        className={clsx("text-accent-text shrink-0", !checked && "invisible")}
+      />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {count !== undefined && (
         <span className="text-caption text-label-2 font-mono shrink-0">{count}</span>

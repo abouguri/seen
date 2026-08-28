@@ -37,8 +37,8 @@ export default async function StatsPage() {
   const stats = computeStats(movieEntries, showEntries);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-6 pb-16 md:px-8">
-      <h1 className="text-large-title mb-6">{copy.stats.title}</h1>
+    <div className="flex-1 overflow-y-auto px-4 pt-6 pb-16 md:px-9">
+      <h1 className="text-display-1 mb-6">{copy.stats.title}</h1>
 
       <div className="flex flex-col gap-8">
         {stats.filmsPerYear.length > 0 && (

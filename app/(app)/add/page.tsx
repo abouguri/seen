@@ -10,7 +10,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Button } from "@/components/ui/Button";
 import { copy } from "@/lib/copy";
 import { useToast } from "@/components/ui/Toast";
-import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
+import { useResponsiveColumns, WALL_COLUMNS } from "@/components/library/useResponsiveColumns";
 import { useRovingGrid } from "@/components/shared/useRovingGrid";
 import type { FilmSummary, ShowSummary } from "@/lib/types";
 
@@ -35,10 +35,14 @@ export default function AddPage() {
   const [mode, setMode] = useState<Mode>("movie");
 
   return (
-    <div className="flex flex-1 flex-col pb-24 md:pb-8">
-      <div className="pt-4 md:pt-8">
-        <h1 className="text-large-title px-4 md:px-8">{copy.wall.title}</h1>
-        <div className="mt-4 px-4 md:px-8">
+    <div className="flex flex-1 flex-col pb-28 md:pb-20">
+      <div className="px-4 pt-8 md:px-9">
+        <p className="text-eyebrow text-label-2">{copy.add.eyebrow}</p>
+        <h1 className="text-display-1 mt-2.5">
+          {copy.add.headlineLead}{" "}
+          <span className="text-warm-text">{copy.add.headlineAccent}</span>
+        </h1>
+        <div className="mt-6">
           <Segmented
             options={[
               { value: "movie" as const, label: copy.library.filter.movies },
@@ -72,7 +76,7 @@ function AddPageContent({ mode }: { mode: Mode }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const { tiles, mergeSeen, toggle, addedCount, isOffline } = usePosterWall(mode);
   const { showToast } = useToast();
-  const { columns } = useResponsiveColumns(gridRef);
+  const { columns } = useResponsiveColumns(gridRef, WALL_COLUMNS);
   const { activeIndex, setActiveIndex, setItemRef, handleKeyDown } = useRovingGrid(
     items.length,
     columns,
@@ -156,11 +160,19 @@ function AddPageContent({ mode }: { mode: Mode }) {
 
   return (
     <>
-      <div className="mt-4">
-        <YearScroller year={year} onChange={setYear} />
+      {/* The year sits beside its own picker in display type — on this
+          screen the year *is* the query, and the scroller alone reads as
+          a row of equal options rather than one active choice. */}
+      <div className="mt-5 flex items-center gap-4 px-4 md:px-9">
+        <div className="min-w-0 flex-1">
+          <YearScroller year={year} onChange={setYear} />
+        </div>
+        <span aria-hidden="true" className="text-figure hidden text-[2.5rem] sm:block">
+          {year}
+        </span>
       </div>
       {isOffline && (
-        <p className="text-footnote text-label-2 bg-surface-1 mx-4 mt-4 rounded-md px-3 py-2 md:mx-8">
+        <p className="text-footnote text-label-2 bg-surface-1 border-separator mx-4 mt-4 rounded-md border px-3 py-2 md:mx-9">
           {copy.wall.offline}
         </p>
       )}
@@ -176,7 +188,7 @@ function AddPageContent({ mode }: { mode: Mode }) {
         <>
           <div
             ref={gridRef}
-            className="grid grid-cols-3 gap-2 px-4 pt-4 sm:grid-cols-4 md:px-8 lg:grid-cols-6 xl:grid-cols-8"
+            className="grid grid-cols-3 gap-1.5 px-4 pt-6 sm:grid-cols-5 md:px-9 lg:grid-cols-8 xl:grid-cols-10"
           >
             {items.map((item, index) => {
               const tile = tiles.get(item.id) ?? {

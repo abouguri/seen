@@ -130,8 +130,8 @@ export function ImportFlow() {
 
   if (state === "reviewing" || state === "committing" || state === "commit-error") {
     return (
-      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-16 md:px-8">
-        <h1 className="text-title-1 mb-6">{copy.import.reviewTitle}</h1>
+      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-16 md:px-9">
+        <h1 className="text-display-2 mb-6">{copy.import.reviewTitle}</h1>
         {state === "commit-error" && (
           <p className="text-footnote text-danger mb-4">{copy.import.commitFailed}</p>
         )}

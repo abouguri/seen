@@ -11,21 +11,25 @@ import { FilterBar } from "@/components/library/FilterBar";
 import { useLibraryData, type LibraryFilterState } from "@/components/library/useLibraryData";
 import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
 import { useRovingGrid } from "@/components/shared/useRovingGrid";
-import { useCollapsingHeader, StickyInlineBar, LargeTitle } from "@/components/library/CollapsingHeader";
+import { LibraryHero } from "@/components/library/LibraryHero";
 import { LogViewingSheet, type LogViewingInput } from "@/components/film/LogViewingSheet";
-import { DetailModal } from "@/components/library/DetailModal";
+import { DetailPanel } from "@/components/library/DetailPanel";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
 import type { LibraryItem, LibrarySort } from "@/lib/types";
 
-const GAP_PX = 8;
+// 14px, up from 8: LibraryTile's rewatch stack pokes 10px into the
+// gutter, so a tighter gap would have a stack overlap its neighbour.
+const GAP_PX = 14;
 const VIRTUALIZE_THRESHOLD = 300;
-// Title (text-subhead, 20px line-height) + year (text-footnote, 18px) +
-// the tile's gap-1.5 (6px) below the poster — must match LibraryTile's
-// actual rendered height or virtualized rows clip/overlap.
-const TITLE_BLOCK_PX = 44;
+// The tile's non-poster height, which the virtualizer can't measure:
+// pt-1.5 above the poster (6px, clearance for the stack's top card) +
+// title (text-footnote, 18px) + year (text-caption, 16px) + the gap-1.5
+// between poster and title (6px). Must match LibraryTile's actual
+// rendered height or virtualized rows clip/overlap.
+const TITLE_BLOCK_PX = 46;
 const SORT_VALUES: LibrarySort[] = ["recent_added", "recent_watched", "release_year", "rating", "title"];
 
 function parseSort(value: string | null): LibrarySort {
@@ -98,9 +102,6 @@ function LibraryContent() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  useCollapsingHeader(scrollRef, barRef, titleRef);
 
   const { columns, containerWidth } = useResponsiveColumns(gridRef);
   const { activeIndex, setActiveIndex, setItemRef, handleKeyDown } = useRovingGrid(
@@ -211,20 +212,19 @@ function LibraryContent() {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
-      <StickyInlineBar ref={barRef} title={copy.library.title} />
-
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
-        <LargeTitle ref={titleRef} title={copy.library.title} />
+        <LibraryHero count={total} countNoun={countLabel(filters.mediaType, total)} />
 
-        <div className="flex items-center justify-between gap-3 px-4 pb-3 md:px-8">
-          <p className="text-subhead text-label-2 shrink-0">
-            {total} {countLabel(filters.mediaType, total)}
-          </p>
+        {/* Filters and sort share one row — the chips are the loud part
+            and sort is a single quiet control, so giving sort its own
+            line above them (as before) over-weighted it. */}
+        <div className="flex items-center gap-2 px-4 pt-7 pb-5 md:px-9">
+          {/* min-w-0 so FilterBar's own max-sm scroll container can
+              actually shrink rather than pushing sort off the row. */}
+          <div className="min-w-0 flex-1">
+            <FilterBar value={filters} onChange={setFilters} />
+          </div>
           <SortControl value={sort} onChange={setSort} />
-        </div>
-
-        <div className="px-4 pb-4 md:px-8">
-          <FilterBar value={filters} onChange={setFilters} />
         </div>
 
         {error && films.length === 0 && (
@@ -242,7 +242,7 @@ function LibraryContent() {
           </p>
         )}
 
-        <div ref={gridRef} className="px-4 md:px-8">
+        <div ref={gridRef} className="px-4 md:px-9">
           {shouldVirtualize ? (
             <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
               {virtualizer.getVirtualItems().map((virtualRow) => (
@@ -259,7 +259,7 @@ function LibraryContent() {
                   }}
                 >
                   <div
-                    className="grid gap-2"
+                    className="grid gap-3.5"
                     style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
                   >
                     {rows[virtualRow.index]?.map((film, colIndex) => {
@@ -284,7 +284,7 @@ function LibraryContent() {
             </div>
           ) : (
             <div
-              className="grid gap-2"
+              className="grid gap-3.5"
               style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
             >
               {films.map((film, index) => (
@@ -311,7 +311,7 @@ function LibraryContent() {
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
       )}
 
-      <DetailModal item={openItem} onClose={() => setOpenItem(null)} />
+      <DetailPanel item={openItem} onClose={() => setOpenItem(null)} />
 
       {logItem && (
         <LogViewingSheet

@@ -77,7 +77,7 @@ export default async function FilmDetailPage({
           <div className="h-16" />
         )}
 
-        <div className="relative -mt-16 flex gap-4 px-4 md:px-8">
+        <div className="relative -mt-16 flex gap-4 px-4 md:px-9">
           <div
             className="bg-surface-2 relative aspect-[2/3] w-28 shrink-0 overflow-hidden rounded-md md:w-36"
             style={{ viewTransitionName: "shared-poster" } as React.CSSProperties}
@@ -100,7 +100,7 @@ export default async function FilmDetailPage({
             )}
           </div>
           <div className="flex flex-1 flex-col justify-end pb-2">
-            <h1 className="text-title-1">{detail.title}</h1>
+            <h1 className="text-display-2">{detail.title}</h1>
             {metaParts.length > 0 && (
               <p className="text-subhead text-label-2 mt-1">{metaParts.join(" · ")}</p>
             )}
@@ -108,7 +108,7 @@ export default async function FilmDetailPage({
         </div>
       </div>
 
-      <div className="mt-6 px-4 md:px-8">
+      <div className="mt-6 px-4 md:px-9">
         <ViewingHistory filmId={detail.id} initialEntries={entries} />
 
         {detail.overview && (

@@ -32,7 +32,7 @@ export function SignInForm({ hadCallbackError }: { hadCallbackError: boolean }) 
   return (
     <div className="w-full max-w-sm">
       <p className="text-headline text-label-2 mb-1">{APP_NAME}</p>
-      <h1 className="text-large-title mb-6">{copy.signIn.title}</h1>
+      <h1 className="text-display-1 mb-6">{copy.signIn.title}</h1>
 
       {status === "sent" ? (
         <div>

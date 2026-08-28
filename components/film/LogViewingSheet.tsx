@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Segmented } from "@/components/ui/Segmented";
 import { StarRating } from "@/components/ui/StarRating";
@@ -127,6 +127,21 @@ export function LogViewingSheet({
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const isEditing = Boolean(initialEntry);
 
+  // Targets for the summary sentence's jump-to-field parts. The "when"
+  // ref is shared across the three date inputs because only one of them
+  // is ever mounted (they're mutually exclusive branches of whenMode).
+  const whenFieldRef = useRef<HTMLInputElement>(null);
+  const placeRef = useRef<HTMLInputElement>(null);
+  const companyRef = useRef<HTMLInputElement>(null);
+
+  function focusField(ref: React.RefObject<HTMLInputElement | null>) {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollIntoView({ block: "nearest" });
+    el.focus();
+    el.select?.();
+  }
+
   useEffect(() => {
     if (!open || !showTags) return;
     fetch("/api/tags")
@@ -192,8 +207,31 @@ export function LogViewingSheet({
       title={isEditing ? copy.logViewing.editTitle : copy.logViewing.title}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* The redesign states the viewing back to you as a sentence
+            rather than a stack of labelled fields. It's a live summary,
+            not a second set of controls: each underlined part is a
+            button that jumps to the field that sets it, so there's still
+            exactly one place each value is entered. */}
+        <p className="font-(family-name:--display) text-[clamp(1.5rem,1.1rem+1.6vw,2.125rem)] leading-relaxed tracking-[-0.02em]">
+          {copy.logViewing.sentenceLead}{" "}
+          <SentencePart onFocusField={() => focusField(whenFieldRef)}>
+            {whenPhrase(state)}
+          </SentencePart>
+          {state.place && (
+            <>
+              , <SentencePart onFocusField={() => focusField(placeRef)}>{state.place}</SentencePart>
+            </>
+          )}
+          {state.company && (
+            <>
+              , <SentencePart onFocusField={() => focusField(companyRef)}>{state.company}</SentencePart>
+            </>
+          )}
+          .
+        </p>
+
         <div>
-          <p className="text-footnote text-label-2 mb-2">{copy.logViewing.whenLabel}</p>
+          <p className="text-eyebrow text-label-3 mb-2.5">{copy.logViewing.whenLabel}</p>
           <Segmented
             options={WHEN_OPTIONS}
             value={state.whenMode}
@@ -203,6 +241,7 @@ export function LogViewingSheet({
 
           {state.whenMode === "pickDate" && (
             <input
+              ref={whenFieldRef}
               type="date"
               value={state.dateValue}
               onChange={(event) => update("dateValue", event.target.value)}
@@ -214,6 +253,7 @@ export function LogViewingSheet({
 
           {state.whenMode === "year" && (
             <input
+              ref={whenFieldRef}
               type="number"
               inputMode="numeric"
               value={state.yearValue}
@@ -228,6 +268,7 @@ export function LogViewingSheet({
           {state.whenMode === "roughly" && (
             <div className="mt-3">
               <input
+                ref={whenFieldRef}
                 type="text"
                 value={state.eraValue}
                 onChange={(event) => update("eraValue", event.target.value)}
@@ -251,29 +292,73 @@ export function LogViewingSheet({
           )}
         </div>
 
-        <div>
-          <p className="text-footnote text-label-2 mb-2">{copy.logViewing.ratingLabel}</p>
+        <div className="border-separator flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-5">
+          <p className="text-eyebrow text-label-3 w-16">{copy.logViewing.ratingLabel}</p>
           <StarRating
             value={state.rating}
             onChange={(value) => update("rating", value)}
             aria-label={copy.logViewing.ratingLabel}
           />
+          <span className="text-footnote text-label-2 font-bold">
+            {state.rating === null ? copy.logViewing.unrated : `${state.rating} / 10`}
+          </span>
         </div>
 
         <div>
-          <input
-            type="text"
+          <label
+            htmlFor="log-note"
+            className="text-eyebrow text-label-3 mb-2.5 block"
+          >
+            {copy.logViewing.noteLabel}
+          </label>
+          {/* A textarea in the display face, not a single-line input:
+              this is the field you're most likely to write a real
+              sentence into, and the one thing on the screen worth
+              re-reading later. */}
+          <textarea
+            id="log-note"
+            rows={3}
             value={state.note}
             onChange={(event) => update("note", event.target.value)}
             placeholder={copy.logViewing.notePlaceholder}
-            aria-label={copy.logViewing.noteLabel}
-            className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 w-full rounded-md px-3 outline-none"
+            className="bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent w-full resize-none rounded-md border p-4 font-(family-name:--display) text-xl leading-relaxed outline-offset-2"
           />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="log-place" className="text-eyebrow text-label-3 mb-2.5 block">
+              {copy.logViewing.placeLabel}
+            </label>
+            <input
+              ref={placeRef}
+              id="log-place"
+              type="text"
+              value={state.place}
+              onChange={(event) => update("place", event.target.value)}
+              placeholder={copy.logViewing.placePlaceholder}
+              className="text-body bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent min-h-11 w-full rounded-md border px-3 outline-offset-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="log-company" className="text-eyebrow text-label-3 mb-2.5 block">
+              {copy.logViewing.companyLabel}
+            </label>
+            <input
+              ref={companyRef}
+              id="log-company"
+              type="text"
+              value={state.company}
+              onChange={(event) => update("company", event.target.value)}
+              placeholder={copy.logViewing.companyPlaceholder}
+              className="text-body bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent min-h-11 w-full rounded-md border px-3 outline-offset-2"
+            />
+          </div>
         </div>
 
         {showTags && (
           <div>
-            <p className="text-footnote text-label-2 mb-2">{copy.logViewing.tagsLabel}</p>
+            <p className="text-eyebrow text-label-3 mb-2.5">{copy.logViewing.tagsLabel}</p>
             <TagInput
               value={state.tags}
               onChange={(tags) => update("tags", tags)}
@@ -281,8 +366,6 @@ export function LogViewingSheet({
             />
           </div>
         )}
-
-        <MoreFields state={state} update={update} />
 
         <Button type="submit" disabled={!canSubmit} className="w-full">
           {isEditing ? copy.logViewing.saveChanges : copy.logViewing.submit}
@@ -292,41 +375,48 @@ export function LogViewingSheet({
   );
 }
 
-function MoreFields({
-  state,
-  update,
+/** How the chosen "when" reads inside the summary sentence. */
+function whenPhrase(state: FormState): string {
+  switch (state.whenMode) {
+    case "today":
+      return copy.logViewing.phraseToday;
+    case "pickDate":
+      return state.dateValue
+        ? new Date(`${state.dateValue}T00:00:00`).toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : copy.logViewing.phraseNoDate;
+    case "year":
+      return `${copy.logViewing.phraseInYear} ${state.yearValue}`;
+    case "roughly":
+      return state.eraValue.trim() || copy.logViewing.phraseRoughly;
+    case "unknown":
+      return copy.logViewing.phraseUnknown;
+  }
+}
+
+/**
+ * One underlined, pressable phrase in the summary sentence. It isn't a
+ * control in its own right — pressing it moves focus to the field that
+ * owns the value, so the sentence stays a mirror and never becomes a
+ * second, competing place to enter the same thing.
+ */
+function SentencePart({
+  children,
+  onFocusField,
 }: {
-  state: FormState;
-  update: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  children: React.ReactNode;
+  onFocusField: () => void;
 }) {
-  const [open, setOpen] = useState(Boolean(state.place || state.company));
-
   return (
-    <div>
-      <button type="button" onClick={() => setOpen((prev) => !prev)} className="text-footnote text-accent-text">
-        {copy.logViewing.more}
-      </button>
-
-      {open && (
-        <div className="mt-3 flex flex-col gap-3">
-          <input
-            type="text"
-            value={state.place}
-            onChange={(event) => update("place", event.target.value)}
-            placeholder={copy.logViewing.placePlaceholder}
-            aria-label={copy.logViewing.placeLabel}
-            className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 w-full rounded-md px-3 outline-none"
-          />
-          <input
-            type="text"
-            value={state.company}
-            onChange={(event) => update("company", event.target.value)}
-            placeholder={copy.logViewing.companyPlaceholder}
-            aria-label={copy.logViewing.companyLabel}
-            className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 w-full rounded-md px-3 outline-none"
-          />
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={onFocusField}
+      className="decoration-warm focus-visible:outline-accent rounded-xs underline decoration-2 underline-offset-[6px] outline-offset-2"
+    >
+      {children}
+    </button>
   );
 }

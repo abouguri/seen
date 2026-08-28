@@ -12,7 +12,7 @@ const LONG_PRESS_MS = 500;
 type LibraryTileProps = {
   film: LibraryItem;
   onContextMenu: (film: LibraryItem, x: number, y: number) => void;
-  /** Opens the detail modal — DetailModal, not a page navigation (see
+  /** Opens the detail panel — DetailModal, not a page navigation (see
    *  components/library/DetailModal.tsx for why). */
   onOpen: (film: LibraryItem) => void;
   /** Opens the log-viewing sheet directly — the hover/focus quick-action,
@@ -30,15 +30,23 @@ type LibraryTileProps = {
 };
 
 /**
- * Tapping the poster opens the detail modal in place — a full page
+ * Tapping the poster opens the detail panel in place — a full page
  * navigation here was a real perceived-latency complaint (new route,
  * new RSC payload, a blank moment before anything appears), and the
- * modal's poster/title are already known from this very grid item, so
- * it opens with zero fetch instead. Long-press/right-click opens the
- * context menu instead. Hover/focus lifts the poster (SEEN Interaction
- * Plan §3.3) and reveals a quick-log button — deliberately a translateY
+ * panel's poster/title are already known from this very grid item, so
+ * it opens with zero fetch. Long-press/right-click opens the context
+ * menu instead. Hover/focus lifts the poster (SEEN Interaction Plan
+ * §3.3) and reveals a quick-log button — deliberately a translateY
  * lift, not a scale-up: growing a tile in a dense "things I've already
  * watched" grid shoves its neighbours around and implies "preview this."
+ *
+ * A rewatched title is drawn as a *stack* of posters rather than a
+ * single card (SEEN Redesign) — one card peeking out behind for a second
+ * viewing, two for a third or more. It's the one place in the grid where
+ * the shape of a tile carries data, and it's what makes a well-worn
+ * library legible at a glance instead of uniform. The count badge in the
+ * corner is the non-decorative half of that: the stack alone tops out at
+ * "three or more", the badge says which.
  *
  * The quick-log button is a DOM *sibling* of the poster button, not a
  * child of it — nesting a real or ARIA-faked button inside a native
@@ -62,6 +70,7 @@ export function LibraryTile({
 
   const url = posterUrl(film.posterPath, "w342");
   const alt = `${film.title} (${film.year ?? "unknown year"}) poster`;
+  const rewatched = film.watchCount > 1;
 
   function handlePointerDown(event: React.PointerEvent) {
     if (event.pointerType !== "touch") return;
@@ -92,8 +101,25 @@ export function LibraryTile({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 pt-1.5">
       <div className="group relative">
+        {/* The cards behind. Offset into the grid gutter (10px into a
+            14px gap) so they read as a stack without colliding with the
+            neighbouring tile. aria-hidden — the count badge below says
+            the same thing in words. */}
+        {film.watchCount > 2 && (
+          <span
+            aria-hidden="true"
+            className="bg-warm absolute -top-1.5 right-[-10px] bottom-4.5 left-2.5 rounded-sm opacity-50"
+          />
+        )}
+        {rewatched && (
+          <span
+            aria-hidden="true"
+            className="bg-accent-text absolute top-0 right-[-5px] bottom-3.5 left-1.5 rounded-sm opacity-55"
+          />
+        )}
+
         <button
           ref={tileRef}
           type="button"
@@ -107,12 +133,14 @@ export function LibraryTile({
           onPointerLeave={clearLongPress}
           onPointerCancel={clearLongPress}
           aria-haspopup="dialog"
-          aria-label={film.title}
+          aria-label={
+            rewatched ? `${film.title}, seen ${film.watchCount} times` : film.title
+          }
           className="focus-visible:outline-accent relative block aspect-2/3 w-full overflow-hidden rounded-sm outline-offset-2"
         >
           <div
             ref={imgRef}
-            className="absolute inset-0 translate-y-0 shadow-none transition-[translate,box-shadow] duration-(--t-card) ease-(--default-transition-timing-function) group-hover:-translate-y-1 group-hover:shadow-[0_10px_24px_-8px_rgba(0,0,0,.75)] group-focus-within:-translate-y-1 group-focus-within:shadow-[0_10px_24px_-8px_rgba(0,0,0,.75)] group-active:-translate-y-px"
+            className="absolute inset-0 translate-y-0 shadow-none transition-[translate,box-shadow] duration-(--t-card) ease-(--default-transition-timing-function) group-hover:-translate-y-1.5 group-hover:shadow-[0_14px_30px_-8px_rgba(0,0,0,.55)] group-focus-within:-translate-y-1.5 group-focus-within:shadow-[0_14px_30px_-8px_rgba(0,0,0,.55)] group-active:-translate-y-px"
           >
             {url ? (
               <>
@@ -134,12 +162,15 @@ export function LibraryTile({
             )}
           </div>
 
+          {rewatched && (
+            <span className="bg-scrim/70 text-caption border-separator-strong text-label pointer-events-none absolute top-2 left-2 rounded-full border px-1.5 py-0.5 font-bold backdrop-blur-md">
+              {film.watchCount}×
+            </span>
+          )}
+
           {film.rating != null && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-linear-to-t from-black/85 to-transparent p-2 pt-6 opacity-0 transition-opacity duration-(--t-hover) group-hover:opacity-100 group-focus-visible:opacity-100">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center bg-linear-to-t from-black/85 to-transparent p-2 pt-6 opacity-0 transition-opacity duration-(--t-hover) group-hover:opacity-100 group-focus-visible:opacity-100">
               <Stars value={film.rating} size={12} />
-              {film.watchCount > 1 && (
-                <span className="text-caption text-label-2">{film.watchCount}×</span>
-              )}
             </div>
           )}
         </button>
@@ -159,10 +190,10 @@ export function LibraryTile({
       </div>
 
       <div aria-hidden="true">
-        <p className="text-subhead font-semibold text-ellipsis whitespace-nowrap overflow-hidden">
+        <p className="text-footnote overflow-hidden font-bold text-ellipsis whitespace-nowrap">
           {film.title}
         </p>
-        <p className="text-footnote text-label-2">{film.year ?? ""}</p>
+        <p className="text-caption text-label-2">{film.year ?? ""}</p>
       </div>
     </div>
   );

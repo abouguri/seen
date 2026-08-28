@@ -46,8 +46,8 @@ export function SettingsContent({ email }: { email: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto px-4 pt-8 pb-16 md:px-8">
-      <h1 className="text-large-title mb-8">{copy.settings.title}</h1>
+    <div className="flex flex-1 flex-col overflow-y-auto px-4 pt-8 pb-16 md:px-9">
+      <h1 className="text-display-2 mb-8">{copy.settings.title}</h1>
 
       <Section title={copy.settings.accountSection}>
         <p className="text-body text-label-2">

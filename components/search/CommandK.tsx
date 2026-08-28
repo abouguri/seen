@@ -55,7 +55,7 @@ export function CommandK() {
             }
             className="bg-surface-1 border-separator squircle relative h-fit max-h-[70vh] w-full max-w-lg overflow-y-auto rounded-lg border"
           >
-            <SearchPanel onNavigate={() => setOpen(false)} />
+            <SearchPanel variant="palette" onNavigate={() => setOpen(false)} />
           </motion.div>
         </div>
       )}

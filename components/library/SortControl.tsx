@@ -46,6 +46,7 @@ export function SortControl({ value, onChange }: SortControlProps) {
       onChange={(v) => v !== undefined && onChange(v)}
       open={open}
       onOpenChange={setOpen}
+      tone="plain"
     />
   );
 }

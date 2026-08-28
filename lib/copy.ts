@@ -27,6 +27,12 @@ export const copy = {
   },
   library: {
     title: "Library",
+    /* The display headline is two lines by design — the second one takes
+       the lilac, so it's kept separate rather than split at render. */
+    headlineLead: "Everything you've",
+    headlineAccent: "already seen.",
+    searchAffordance: "Search your archive",
+    addAction: "Add titles",
     emptyMessage:
       "Nothing here yet. Tap Add and start with a decade you remember well.",
     noResultsForFilter: "No films match these filters. Clear a filter and try again.",
@@ -91,10 +97,24 @@ export const copy = {
     emptyPrompt: "Search for a film to see if you've watched it.",
     noResults: "No results for",
     seenLabel: "Seen",
+    /* The redesign splits results into what you've already logged and
+       everything else, rather than one relevance-ordered list. */
+    inArchive: "In your archive",
+    elsewhere: "Elsewhere",
+    logIt: "Log it",
+  },
+  add: {
+    eyebrow: "Poster wall",
+    headlineLead: "Colour in what you",
+    headlineAccent: "remember.",
   },
   film: {
-    logAViewing: "Log a viewing",
+    logAnother: "Log another",
     yourHistory: "Your viewing history",
+    /* The detail panel's three figures. */
+    statSeen: "Seen",
+    statRating: "Your rating",
+    statLastSeen: "Last seen",
     synopsis: "Synopsis",
     noHistoryYet: "You haven't logged a viewing yet.",
     editViewing: "Edit viewing",
@@ -116,10 +136,21 @@ export const copy = {
     eraLabel: "What was going on?",
     eraPlaceholder: "as a kid",
     eraSuggestions: ["as a kid", "at university", "during lockdown"],
+    /* "More" is gone with the disclosure it opened — Where and Who with
+       are always visible now, because the summary sentence names them. */
     ratingLabel: "Rating",
-    noteLabel: "Note",
-    notePlaceholder: "What do you remember about it?",
-    more: "More",
+    unrated: "Not rated",
+    noteLabel: "What do you remember?",
+    notePlaceholder: "The library scene. The rain on the sleeve at the end.",
+    /* The summary sentence at the top of the form. Each phrase is
+       written to slot into "I watched it ___, ___, ___." — so they read
+       as adverbials, not as field values. */
+    sentenceLead: "I watched it",
+    phraseToday: "today",
+    phraseNoDate: "on a date",
+    phraseInYear: "in",
+    phraseRoughly: "roughly",
+    phraseUnknown: "at some point",
     placeLabel: "Where",
     placePlaceholder: "cinema, on a plane",
     companyLabel: "Who with",
@@ -132,10 +163,11 @@ export const copy = {
     close: "Close",
   },
   wall: {
-    title: "Add films",
     done: "Done",
     noResults: "No films found for this year.",
-    addedCount: (n: number) => `${n} film${n === 1 ? "" : "s"} added`,
+    /* The floating bar sets the number in display type on its own, so
+       the words beside it can't repeat it. */
+    addedLabel: "added to your archive",
     offline: "Offline — changes will sync",
   },
   stats: {

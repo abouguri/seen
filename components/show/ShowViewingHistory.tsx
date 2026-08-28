@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
+import { clsx } from "clsx";
 import { Button } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Stars";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
@@ -151,29 +152,54 @@ export function ShowViewingHistory({ showId, initialEntries }: ShowViewingHistor
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-title-2">{copy.film.yourHistory}</h2>
-        <Button onClick={() => setSheetOpen(true)}>{copy.film.logAViewing}</Button>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-display-2">{copy.film.yourHistory}</h2>
+        <Button onClick={() => setSheetOpen(true)} className="shrink-0">
+          {copy.film.logAnother}
+        </Button>
       </div>
 
       {entries.length === 0 ? (
         <p className="text-body text-label-2">{copy.film.noHistoryYet}</p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {entries.map((entry) => (
-            <li key={entry.id} className="border-separator group flex items-start gap-2 border-b pb-4 last:border-0">
+        // Same timeline as ViewingHistory — see the note there for why
+        // this isn't a list of cards. Duplicated rather than extracted:
+        // the two differ in what an entry *has* (shows carry no tags),
+        // and this presentation is 30 lines of markup, not logic.
+        <ul className="relative flex flex-col pl-5.5">
+          <span
+            aria-hidden="true"
+            className="bg-separator-strong absolute top-1.5 bottom-3.5 left-1 w-0.5 rounded-full"
+          />
+          {entries.map((entry, index) => (
+            <li key={entry.id} className="group relative flex items-start gap-2 pb-5.5 last:pb-0">
+              <span
+                aria-hidden="true"
+                className={clsx(
+                  "ring-surface-1 absolute top-1.5 -left-5.5 h-2.75 w-2.75 rounded-full ring-4",
+                  index === 0
+                    ? "bg-accent"
+                    : index === entries.length - 1
+                      ? "bg-warm"
+                      : "bg-accent-text",
+                )}
+              />
               <button
                 type="button"
                 onClick={() => setEditingEntry(entry)}
-                className="min-w-0 flex-1 text-left"
+                className="focus-visible:outline-accent min-w-0 flex-1 rounded-xs text-left outline-offset-2"
               >
-                <div className="flex items-center gap-3">
-                  <p className="text-headline">{formatWatchedDate(entry)}</p>
-                  {entry.rating !== null && <Stars value={entry.rating} size={14} />}
+                <div className="flex flex-wrap items-baseline gap-2.5">
+                  <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>
+                  {entry.rating !== null && <Stars value={entry.rating} size={13} />}
                 </div>
-                {entry.note && <p className="text-body text-label-2 mt-1">{entry.note}</p>}
+                {entry.note && (
+                  <p className="text-label mt-2 font-(family-name:--display) text-[1.1875rem] leading-snug">
+                    {entry.note}
+                  </p>
+                )}
                 {(entry.place || entry.company) && (
-                  <p className="text-footnote text-label-2 mt-1">
+                  <p className="text-footnote text-label-2 mt-1.5">
                     {[entry.place, entry.company].filter(Boolean).join(" · ")}
                   </p>
                 )}

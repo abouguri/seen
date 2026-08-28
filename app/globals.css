@@ -66,6 +66,16 @@
   --warm-text: #fe9e47;
   --on-warm: #251306;
 
+  /* Background patterns (see the .pattern-* utilities below). Aliases
+     rather than new colours: every pattern draws in the same two brand
+     tints the rest of the interface uses, so they follow the palette
+     into light mode instead of needing a second set of values.
+     --pattern-alpha is the one dial — the brand rule is that a pattern
+     is felt before it is noticed, which puts it in the 5–15% band. */
+  --pattern-color: var(--accent-text);
+  --pattern-warm: var(--warm);
+  --pattern-alpha: 9%;
+
   /* Translucent chrome for nav bars, tab bars, materials (§7.3) */
   --material-chrome: rgba(13, 15, 22, 0.72);
 
@@ -204,6 +214,10 @@
 
     --material-chrome: rgba(239, 233, 225, 0.72);
     --scrim: #1e1814;
+
+    /* Paper takes a touch more: the same alpha of a dark tint reads
+       fainter on a light ground than a light tint does on a dark one. */
+    --pattern-alpha: 11%;
   }
 }
 
@@ -235,6 +249,7 @@
 
   --material-chrome: rgba(239, 233, 225, 0.72);
   --scrim: #1e1814;
+  --pattern-alpha: 11%;
 }
 
 /* Tailwind v4 CSS-first theme — maps tokens onto utility classes so
@@ -388,6 +403,220 @@
     text-transform: uppercase;
   }
 
+  /* ==========================================================================
+     Pattern system (SEEN pattern library)
+     Twelve variations were designed; the eight with a home in the product are
+     ported here. Each is a stack of gradients over a transparent ground, so a
+     pattern can be laid over any surface — the app shell, a sheet, a panel —
+     without carrying its own background colour.
+
+     They draw from the same two brand tints as everything else
+     (--accent-text and --warm) rather than a parallel set of pattern
+     colours, which is what keeps them re-tinting correctly in light mode:
+     --accent-text is the lilac on dark and the violet on paper.
+
+     The governing rule: the poster is always louder than the pattern. These
+     sit at --pattern-alpha, and the layer is `pointer-events: none` and
+     aria-hidden everywhere it's used — decoration, never content.
+     ========================================================================== */
+  .pattern-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-repeat: repeat;
+  }
+
+  /* The global shell texture. Sub-pixel dots at three cadences — visible as
+     grain, never as dots. Applied under every screen. */
+  .pattern-archive-grain {
+    background-image:
+      radial-gradient(
+        circle at 20% 20%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 0 0.55px,
+        transparent 0.8px
+      ),
+      radial-gradient(
+        circle at 70% 35%,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent) 0 0.45px,
+        transparent 0.75px
+      ),
+      radial-gradient(
+        circle at 40% 80%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 0 0.4px,
+        transparent 0.7px
+      );
+    background-size:
+      17px 17px,
+      23px 23px,
+      29px 29px;
+  }
+
+  /* Contact sheet — a frame grid with a register dot in each cell, at
+     2:3 to echo the poster it sits behind. The library. */
+  .pattern-contact-ledger {
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 1px,
+        transparent 1px
+      ),
+      radial-gradient(
+        circle at 16px 16px,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent) 0 2px,
+        transparent 2.5px
+      );
+    background-size: 112px 152px;
+  }
+
+  /* The logo geometry itself — offset rounded cards cropped by the frame
+     edges. The poster wall, where you're building the stack. */
+  .pattern-cropped-stack {
+    background-image:
+      radial-gradient(
+        ellipse at -8% 112%,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent),
+        transparent 46%
+      ),
+      radial-gradient(
+        ellipse at 112% -12%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent),
+        transparent 50%
+      ),
+      linear-gradient(
+        135deg,
+        transparent 48%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 64%,
+        transparent 80%
+      );
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  /* Light thrown across a dark room. Search and sign-in — the two screens
+     that are mostly empty and want atmosphere rather than structure. */
+  .pattern-projector-veil {
+    background-image:
+      radial-gradient(
+        ellipse at 62% -8%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 0,
+        transparent 58%
+      ),
+      linear-gradient(
+        112deg,
+        transparent 32%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 48%,
+        transparent 64%
+      ),
+      radial-gradient(
+        circle at 20% 78%,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent),
+        transparent 28%
+      );
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  /* Ruled paper with a margin rule. The log-viewing form — the one place
+     in the app you actually write something down. */
+  .pattern-paper-register {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0 27px,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 27px 28px
+      ),
+      linear-gradient(
+        90deg,
+        transparent 0 11%,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent) 11% 11.5%,
+        transparent 11.5%
+      );
+  }
+
+  /* A measured rule with register marks. Statistics. */
+  .pattern-timeline-index {
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0 35px,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 35px 36px,
+        transparent 36px 70px
+      ),
+      linear-gradient(
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent),
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent)
+      );
+    /* The rule is 1px, not the 1% the source pattern used — a percentage
+       band grows with the viewport, and at 900px tall that was a 9px
+       stripe across the middle of the screen. */
+    background-size:
+      auto,
+      100% 1px;
+    background-position:
+      0 0,
+      0 50%;
+    background-repeat:
+      repeat,
+      no-repeat;
+  }
+
+  /* Concentric rings, off-centre. The detail panel, over the backdrop
+     still — a focal mark for the one title you're looking at. */
+  .pattern-aperture-echo {
+    background-image:
+      radial-gradient(
+        circle at 76% 20%,
+        transparent 0 88px,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 88px 89px,
+        transparent 89px 188px,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 188px 189px,
+        transparent 189px
+      ),
+      radial-gradient(
+        circle at 18% 84%,
+        transparent 0 150px,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent) 150px 151px,
+        transparent 151px
+      );
+    /* Deliberately not tiled. At the source pattern's 280px cadence this
+       repeats into a field of circles that reads as content behind the
+       text rather than as a mark on the surface. One aperture, placed. */
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  /* Two rules and a register dot — the quietest of the family. Empty and
+     offline states, where there's nothing to compete with and the pattern
+     has to carry the surface on its own without becoming the subject. */
+  .pattern-memory-frames {
+    background-image:
+      linear-gradient(
+        115deg,
+        transparent 0 19%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 19% 20%,
+        transparent 20%
+      ),
+      radial-gradient(
+        circle at 82% 24%,
+        color-mix(in srgb, var(--pattern-warm) var(--pattern-alpha), transparent),
+        transparent 62%
+      ),
+      linear-gradient(
+        96deg,
+        transparent 0 55%,
+        color-mix(in srgb, var(--pattern-color) var(--pattern-alpha), transparent) 55% 56%,
+        transparent 56%
+      );
+    background-size:
+      220px 180px,
+      320px 260px,
+      340px 240px;
+  }
+
   /* Translucent material (§7.3) for nav bars, tab bars, floating action
      bars. Content must stay visible scrolling underneath. */
   .material-chrome {
@@ -410,6 +639,17 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* prefers-contrast: the patterns are decoration and nothing is conveyed by
+   them, so at increased contrast they're removed outright rather than
+   dimmed — a faint texture behind text is exactly what this preference is
+   asking to be rid of. Setting the alpha to 0 kills every layer at once,
+   since all eight resolve their colours through it. */
+@media (prefers-contrast: more) {
+  :root {
+    --pattern-alpha: 0%;
   }
 }
 

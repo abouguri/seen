@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Search as SearchIcon } from "lucide-react";
 import { clsx } from "clsx";
 import { PosterThumb } from "@/components/film/PosterThumb";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { posterUrl } from "@/lib/images";
 import { formatWatchedDate } from "@/lib/dates";
 import { copy } from "@/lib/copy";
@@ -148,19 +149,32 @@ export function SearchPanel({
       </div>
 
       <div className={clsx("flex-1", isPage ? "px-4 pb-10 md:px-9" : "px-4 pb-4")}>
-        {status === "idle" && (
-          <p className="text-body text-label-2 mt-8 text-center">{copy.search.emptyPrompt}</p>
-        )}
+        {status === "idle" &&
+          (isPage ? (
+            <EmptyState title={copy.search.emptyPromptTitle} body={copy.search.emptyPrompt} />
+          ) : (
+            <p className="text-body text-label-2 mt-8 text-center">{copy.search.emptyPrompt}</p>
+          ))}
 
-        {status === "error" && (
-          <p className="text-body text-danger mt-8 text-center">{errorMessage}</p>
-        )}
+        {status === "error" &&
+          (isPage ? (
+            <EmptyState tone="error" title={errorMessage} />
+          ) : (
+            <p className="text-body text-danger mt-8 text-center">{errorMessage}</p>
+          ))}
 
-        {status === "success" && results.length === 0 && (
-          <p className="text-body text-label-2 mt-8 text-center">
-            {copy.search.noResults} &ldquo;{query}&rdquo;.
-          </p>
-        )}
+        {status === "success" &&
+          results.length === 0 &&
+          (isPage ? (
+            <EmptyState
+              title={copy.search.noResultsTitle}
+              body={`${copy.search.noResults} \u201C${query}\u201D.`}
+            />
+          ) : (
+            <p className="text-body text-label-2 mt-8 text-center">
+              {copy.search.noResults} &ldquo;{query}&rdquo;.
+            </p>
+          ))}
 
         {seenResults.length > 0 && (
           <section>

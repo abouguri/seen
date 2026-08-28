@@ -1,5 +1,6 @@
 import { SideRail } from "@/components/shell/SideRail";
 import { BottomTabs } from "@/components/shell/BottomTabs";
+import { PatternBackdrop } from "@/components/shell/PatternBackdrop";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { CommandK } from "@/components/search/CommandK";
@@ -18,6 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <QueryProvider>
       <ToastProvider>
+        <PatternBackdrop />
         <div className="flex h-dvh overflow-hidden">
           <SideRail />
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

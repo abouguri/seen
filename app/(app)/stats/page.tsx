@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { computeStats, type MovieEntryRow, type ShowEntryRow } from "@/lib/stats/compute";
 import { formatLoggedDate } from "@/lib/dates";
 import { BarChart } from "@/components/stats/BarChart";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { copy } from "@/lib/copy";
 
 export default async function StatsPage() {
@@ -17,9 +18,7 @@ export default async function StatsPage() {
 
   if (movies.error || shows.error) {
     return (
-      <div className="flex flex-1 items-center justify-center px-4">
-        <p className="text-body text-danger max-w-[32ch] text-center">{copy.stats.loadFailed}</p>
-      </div>
+      <EmptyState tone="error" title={copy.stats.loadFailed} />
     );
   }
 
@@ -28,9 +27,7 @@ export default async function StatsPage() {
 
   if (movieEntries.length === 0 && showEntries.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center px-4">
-        <p className="text-body text-label-2 max-w-[32ch] text-center">{copy.stats.emptyMessage}</p>
-      </div>
+      <EmptyState title={copy.stats.emptyTitle} body={copy.stats.emptyMessage} />
     );
   }
 

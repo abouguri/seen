@@ -96,7 +96,12 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
           ].filter(Boolean);
 
   return (
-    <SidePanel open={item !== null} onClose={onClose} ariaLabel={displayItem.title}>
+    <SidePanel
+      open={item !== null}
+      onClose={onClose}
+      ariaLabel={displayItem.title}
+      pattern="pattern-aperture-echo"
+    >
       <div className="relative h-56 w-full overflow-hidden md:h-75">
         <div className="bg-surface-2 absolute inset-0 animate-pulse" />
         {backdrop && <Image src={backdrop} alt="" fill className="relative object-cover" />}

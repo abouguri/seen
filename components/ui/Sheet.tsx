@@ -85,7 +85,10 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             // 1440px window puts its label and its field metres apart,
             // and the sheet's own edges stop reading as edges. Below sm
             // it stays full-bleed, which is what a bottom sheet is for.
-            className="bg-surface-1 border-separator squircle absolute inset-x-0 bottom-0 mx-auto max-h-[90dvh] overflow-y-auto rounded-t-xl pb-[env(safe-area-inset-bottom)] outline-none sm:max-w-180 sm:border-x"
+            // Archival paper. On the surface itself rather than a child
+            // layer — see the same note in SidePanel.tsx for why an
+            // absolute layer can't stay put inside a scroll container.
+            className="bg-surface-1 border-separator squircle pattern-paper-register absolute inset-x-0 bottom-0 mx-auto max-h-[90dvh] overflow-y-auto rounded-t-xl pb-[env(safe-area-inset-bottom)] outline-none sm:max-w-180 sm:border-x"
           >
             <div className="bg-separator-strong mx-auto mt-2 h-1 w-9 rounded-full" />
             <div className="flex items-center justify-between px-5 pt-4 pb-2">

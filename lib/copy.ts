@@ -33,9 +33,13 @@ export const copy = {
     headlineAccent: "already seen.",
     searchAffordance: "Search your archive",
     addAction: "Add titles",
+    /* Empty states are a card with a heading and a line of body, so the
+       single sentence each used to be is split in two. */
+    emptyTitle: "Your archive starts here.",
     emptyMessage:
-      "Nothing here yet. Tap Add and start with a decade you remember well.",
-    noResultsForFilter: "No films match these filters. Clear a filter and try again.",
+      "Add the films and shows you remember. Exact dates are optional — memory is allowed to be fuzzy.",
+    noResultsTitle: "Nothing matches.",
+    noResultsForFilter: "No titles match these filters. Clear one and try again.",
     sortLabel: "Sort",
     sort: {
       recent_added: "Recently added",
@@ -94,7 +98,9 @@ export const copy = {
   search: {
     title: "Search",
     placeholder: "Search films",
-    emptyPrompt: "Search for a film to see if you've watched it.",
+    emptyPromptTitle: "Have you seen it?",
+    emptyPrompt: "Search for a film or show to find out whether it's already in your archive.",
+    noResultsTitle: "Nothing found.",
     noResults: "No results for",
     seenLabel: "Seen",
     /* The redesign splits results into what you've already logged and
@@ -164,7 +170,8 @@ export const copy = {
   },
   wall: {
     done: "Done",
-    noResults: "No films found for this year.",
+    noResultsTitle: "Nothing for this year.",
+    noResults: "Try a nearby year, or switch between movies and shows.",
     /* The floating bar sets the number in display type on its own, so
        the words beside it can't repeat it. */
     addedLabel: "added to your archive",
@@ -172,7 +179,8 @@ export const copy = {
   },
   stats: {
     title: "Stats",
-    emptyMessage: "Nothing to show yet. Log a few films and check back.",
+    emptyTitle: "No numbers yet.",
+    emptyMessage: "Log a few viewings and this fills in on its own.",
     filmsPerYear: "Titles per year",
     decadesWatched: "Decades watched",
     mostSeenDirectors: "Most-seen directors",

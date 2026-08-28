@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { clsx } from "clsx";
 import { X } from "lucide-react";
 import { copy } from "@/lib/copy";
 
@@ -12,6 +13,10 @@ type SidePanelProps = {
   open: boolean;
   onClose: () => void;
   ariaLabel: string;
+  /** A .pattern-* class laid over the panel's own surface. The shell's
+   *  fixed texture is behind the scrim, so a panel that wants texture has
+   *  to carry its own. */
+  pattern?: string;
   children: React.ReactNode;
 };
 
@@ -32,7 +37,7 @@ type SidePanelProps = {
  * Below sm it goes full-bleed — at 390px a 560px panel with a sliver of
  * backdrop is just a worse full screen.
  */
-export function SidePanel({ open, onClose, ariaLabel, children }: SidePanelProps) {
+export function SidePanel({ open, onClose, ariaLabel, pattern, children }: SidePanelProps) {
   const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -80,7 +85,17 @@ export function SidePanel({ open, onClose, ariaLabel, children }: SidePanelProps
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: "100%" }}
             transition={reduceMotion ? { duration: 0.12 } : SPRING}
-            className="bg-surface-1 border-separator-strong relative h-full w-full max-w-140 overflow-y-auto border-l shadow-[-40px_0_90px_-20px_rgba(0,0,0,.5)] outline-none"
+            // The pattern class goes on the panel itself rather than into
+            // a child layer: a child would have to be absolute, and an
+            // absolute box inside a scroll container scrolls away with the
+            // content after one viewport. A background-image on the
+            // scroller stays put, which is the behaviour a room texture
+            // wants. It composes with bg-surface-1 — one sets the colour,
+            // the other the image.
+            className={clsx(
+              "bg-surface-1 border-separator-strong relative h-full w-full max-w-140 overflow-y-auto border-l shadow-[-40px_0_90px_-20px_rgba(0,0,0,.5)] outline-none",
+              pattern,
+            )}
           >
             <button
               type="button"

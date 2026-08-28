@@ -7,6 +7,7 @@ import { SkeletonTile } from "@/components/wall/SkeletonTile";
 import { AddBar } from "@/components/wall/AddBar";
 import { usePosterWall } from "@/components/wall/use-poster-wall";
 import { Segmented } from "@/components/ui/Segmented";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { copy } from "@/lib/copy";
 import { useToast } from "@/components/ui/Toast";
@@ -172,18 +173,21 @@ function AddPageContent({ mode }: { mode: Mode }) {
         </span>
       </div>
       {isOffline && (
-        <p className="text-footnote text-label-2 bg-surface-1 border-separator mx-4 mt-4 rounded-md border px-3 py-2 md:mx-9">
+        <p className="text-footnote text-label-2 bg-surface-1 border-separator pattern-memory-frames mx-4 mt-4 rounded-md border px-3 py-2 md:mx-9">
           {copy.wall.offline}
         </p>
       )}
 
       {error && items.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-4 px-4 text-center">
-          <p className="text-body text-danger max-w-[32ch]">{copy.errors.tmdbUnreachable}</p>
-          <Button variant="secondary" onClick={() => loadFirstPage(year)}>
-            {copy.errors.retry}
-          </Button>
-        </div>
+        <EmptyState
+          tone="error"
+          title={copy.errors.tmdbUnreachable}
+          action={
+            <Button variant="secondary" onClick={() => loadFirstPage(year)}>
+              {copy.errors.retry}
+            </Button>
+          }
+        />
       ) : (
         <>
           <div
@@ -216,7 +220,7 @@ function AddPageContent({ mode }: { mode: Mode }) {
           </div>
 
           {!loading && items.length === 0 && (
-            <p className="text-body text-label-2 mt-8 px-4 text-center">{copy.wall.noResults}</p>
+            <EmptyState title={copy.wall.noResultsTitle} body={copy.wall.noResults} />
           )}
 
           <div ref={sentinelRef} className="h-1" aria-hidden="true" />

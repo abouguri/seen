@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -12,10 +13,11 @@ import { useLibraryData, type LibraryFilterState } from "@/components/library/us
 import { useResponsiveColumns } from "@/components/library/useResponsiveColumns";
 import { useRovingGrid } from "@/components/shared/useRovingGrid";
 import { LibraryHero } from "@/components/library/LibraryHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { LogViewingSheet, type LogViewingInput } from "@/components/film/LogViewingSheet";
 import { DetailPanel } from "@/components/library/DetailPanel";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { copy } from "@/lib/copy";
 import type { LibraryItem, LibrarySort } from "@/lib/types";
@@ -228,18 +230,29 @@ function LibraryContent() {
         </div>
 
         {error && films.length === 0 && (
-          <div className="mt-8 flex flex-col items-center gap-4 px-4 text-center">
-            <p className="text-body text-danger max-w-[32ch]">{copy.errors.libraryLoadFailed}</p>
-            <Button variant="secondary" onClick={reload}>
-              {copy.errors.retry}
-            </Button>
-          </div>
+          <EmptyState
+            tone="error"
+            title={copy.errors.libraryLoadFailed}
+            action={
+              <Button variant="secondary" onClick={reload}>
+                {copy.errors.retry}
+              </Button>
+            }
+          />
         )}
 
         {isEmpty && !error && (
-          <p className="text-body text-label-2 mt-8 px-4 text-center">
-            {hasActiveFilters ? copy.library.noResultsForFilter : copy.library.emptyMessage}
-          </p>
+          <EmptyState
+            title={hasActiveFilters ? copy.library.noResultsTitle : copy.library.emptyTitle}
+            body={hasActiveFilters ? copy.library.noResultsForFilter : copy.library.emptyMessage}
+            action={
+              hasActiveFilters ? undefined : (
+                <Link href="/add" className={buttonClasses()}>
+                  {copy.library.addAction}
+                </Link>
+              )
+            }
+          />
         )}
 
         <div ref={gridRef} className="px-4 md:px-9">

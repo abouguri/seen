@@ -103,6 +103,12 @@
      measures the same 1.7:1 as a dark thumb on paper at 24%, so light
      mode carries slightly more. Same asymmetry, same reason, as
      --pattern-alpha above. */
+  /* How much accent goes into the sign-in tile field's filled state.
+     Per-mode for the same reason --pattern-alpha is: the same mix reads
+     fainter as a dark tint on paper than as a light one on the near-black
+     ground, and at 20% the light-mode field all but vanished. */
+  --tile-mix: 20%;
+
   --scrollbar-size: 12px;
   --scrollbar-thumb-inset: 3px;
   /* Transparent, not a tint: the gutter then takes the colour of
@@ -143,6 +149,11 @@
   --display:
     "Helvetica Neue", Helvetica, Arial, "Liberation Sans", "Nimbus Sans", sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  /* The wordmark's face, and only the wordmark's — see SeenLockup. Kept
+     as a token so the lockup never reaches for a raw family name, but
+     deliberately not wired into @theme: there is no font-lockup utility
+     for content to pick up by accident. */
+  --lockup: var(--font-inter), var(--font-manrope), system-ui, sans-serif;
 
   /* Type scale (§7.2) — size/line-height in rem so Dynamic Type (browser
      zoom / OS text size) scales the whole scale together. */
@@ -271,6 +282,8 @@
        lilac, and the violet has to be pushed further before it separates
        from the hover state. The token names and the geometry are
        unchanged; only the weights move. */
+    --tile-mix: 34%;
+
     --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
     --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
     --scrollbar-thumb-active: color-mix(in srgb, var(--accent-text) 72%, transparent);
@@ -306,6 +319,8 @@
   --material-chrome: rgba(239, 233, 225, 0.72);
   --scrim: #1e1814;
   --pattern-alpha: 11%;
+
+  --tile-mix: 34%;
 
   --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
   --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
@@ -578,6 +593,12 @@
   /* The small uppercase label that sits above a display heading or
      titles a stat card. Its size is fixed rather than scaled — it's a
      signpost, not copy. */
+  /* The wordmark. A single-purpose utility rather than a --font-* theme
+     entry, so it can't be applied to copy. */
+  .font-lockup {
+    font-family: var(--lockup);
+  }
+
   .text-eyebrow {
     font-size: 0.6875rem;
     line-height: 1rem;
@@ -798,6 +819,63 @@
       220px 180px,
       320px 260px,
       340px 240px;
+  }
+
+  /* ==========================================================================
+     Sign-in tile field
+     An ambient grid of empty 2:3 tiles that fill in one at a time, in a
+     random order, looping slowly — an archive assembling itself. It's the
+     product's own metaphor rather than decoration, and it carries no
+     posters: no image rights, no payload, nothing to load.
+
+     Pure CSS on purpose. The only JS is a visibilitychange listener that
+     flips one attribute; the stagger is inline custom properties, which
+     is what keeps the whole thing under a couple of hundred bytes of
+     script instead of an animation library.
+
+     Both colours are tokens, so the field re-tints in light mode with
+     everything else: tiles rest at --surface-2 (a step off the ground,
+     barely) and fill to the accent mixed into that same surface, which
+     is the "soft muted violet-grey" the field wants. Deliberately a
+     small step — this is texture, and the form has to win.
+     ========================================================================== */
+  .tile-field-tile {
+    background-color: var(--surface-2);
+    animation: seen-tile-fill var(--tile-cycle, 72s) linear var(--tile-delay, 0s) infinite;
+  }
+
+  /* Paused while the tab is hidden — a background tab repainting a grid
+     of 30-odd tiles forever is pure battery cost for something nobody is
+     looking at. One attribute on the container stops every tile. */
+  [data-tiles-paused="true"] .tile-field-tile {
+    animation-play-state: paused;
+  }
+
+  @keyframes seen-tile-fill {
+    /* Fill early and hold long: at any moment most of the field is
+       filled and a few tiles are mid-change, which reads as accumulation
+       rather than as a grid blinking. */
+    0%,
+    100% {
+      background-color: var(--surface-2);
+    }
+    5%,
+    72% {
+      background-color: color-mix(in srgb, var(--accent) var(--tile-mix), var(--surface-2));
+    }
+    82% {
+      background-color: var(--surface-2);
+    }
+  }
+
+  /* Reduced motion renders the end state — the assembled archive — and
+     never animates. Not a dimmed or paused version: the field's whole
+     job is to have filled in, and that is what a still frame of it is. */
+  @media (prefers-reduced-motion: reduce) {
+    .tile-field-tile {
+      animation: none;
+      background-color: color-mix(in srgb, var(--accent) var(--tile-mix), var(--surface-2));
+    }
   }
 
   /* Translucent material (§7.3) for nav bars, tab bars, floating action

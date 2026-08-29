@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { NAV_ITEMS } from "@/components/shell/nav-items";
+import { NAV_ITEMS, isNavItemActive } from "@/components/shell/nav-items";
 
 /**
  * The mobile half of the navigation — the same five destinations as
@@ -25,7 +25,7 @@ export function BottomTabs() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+        const active = isNavItemActive(href, pathname);
         return (
           <Link
             key={href}

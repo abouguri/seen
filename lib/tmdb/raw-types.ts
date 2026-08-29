@@ -93,3 +93,24 @@ export type TmdbMovieDetail = {
     crew: TmdbCrewMember[];
   };
 };
+
+/** /search/person — only what's needed to pick the right director out of
+ *  a name collision. known_for_department is the discriminator: a search
+ *  for "Jane Campion" also returns actors and writers of that name. */
+export type TmdbPersonSearchResult = {
+  id: number;
+  name: string;
+  known_for_department?: string | null;
+  popularity?: number | null;
+};
+
+export type TmdbPersonSearchResponse = {
+  results: TmdbPersonSearchResult[];
+};
+
+/** /person/{id}/movie_credits. The crew array is what carries directing
+ *  work; `cast` is ignored here. One person can appear more than once on
+ *  the same film (director *and* writer), so callers must dedupe by id. */
+export type TmdbPersonMovieCredits = {
+  crew: (TmdbSearchResult & { job?: string | null; department?: string | null })[];
+};

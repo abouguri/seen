@@ -1,6 +1,9 @@
 import "server-only";
 import type {
   TmdbFindResponse,
+  TmdbPersonMovieCredits,
+  TmdbPersonSearchResponse,
+  TmdbPersonSearchResult,
   TmdbMovieDetail,
   TmdbSearchResponse,
   TmdbSearchResult,
@@ -166,4 +169,162 @@ export async function fetchTmdbShowDetail(id: number): Promise<TmdbTvDetail> {
   }
 
   return (await res.json()) as TmdbTvDetail;
+}
+
+/* ---------------------------------------------------------------------
+   Recommendation sources (the homepage).
+
+   All four are cached for a week rather than the 24h the search/discover
+   calls above use, and the difference is deliberate: none of these
+   answers is user-specific or time-sensitive. A director's filmography
+   and a film's related titles change on the order of months, and the
+   homepage's freshness requirement is that it tracks *the library*, not
+   TMDB — the per-user assembly is recomputed from the database on every
+   render, so a newly logged film changes the page immediately while
+   these stay cached underneath it.
+
+   Errors are the caller's problem: a shelf whose source throws renders
+   nothing at all rather than an empty shelf (see the engine).
+   --------------------------------------------------------------------- */
+
+const RECOMMENDATION_TTL = 604800; // 7 days
+
+/**
+ * Films TMDB considers related to one the user rated highly — the seed
+ * for the "Because you rated X five stars" shelves.
+ */
+export async function fetchTmdbRecommendations(id: number): Promise<TmdbSearchResult[]> {
+  const url = `${TMDB_BASE}/movie/${id}/recommendations`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB recommendations failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbSearchResponse;
+  return data.results;
+}
+
+/**
+ * Resolves a director's name to a TMDB person id.
+ *
+ * The films table stores directors as plain names (a text[] column), so
+ * completing a filmography means going back through search. The pick is
+ * the most popular result whose known_for_department is Directing —
+ * without that filter "Anderson" style collisions resolve to whichever
+ * actor happens to rank higher, and the shelf then recommends a
+ * completely unrelated filmography under a director's name. Returns null
+ * rather than guessing when nothing matches.
+ */
+export async function findTmdbDirectorId(name: string): Promise<number | null> {
+  const url = `${TMDB_BASE}/search/person?query=${encodeURIComponent(name.trim())}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB person search failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbPersonSearchResponse;
+  const lower = name.trim().toLowerCase();
+
+  const exact = data.results.filter(
+    (person: TmdbPersonSearchResult) => person.name.trim().toLowerCase() === lower,
+  );
+  const directing = exact.filter((person) => person.known_for_department === "Directing");
+  const pool = directing.length > 0 ? directing : exact;
+
+  if (pool.length === 0) return null;
+  return pool.reduce((best, person) =>
+    (person.popularity ?? 0) > (best.popularity ?? 0) ? person : best,
+  ).id;
+}
+
+/**
+ * Everything a person is credited as having directed. TMDB lists a
+ * person once per job, so someone who wrote and directed the same film
+ * appears twice in `crew` — deduped here by film id so a filmography
+ * count ("3 of 11") is never inflated.
+ */
+export async function fetchTmdbDirectedFilms(personId: number): Promise<TmdbSearchResult[]> {
+  const url = `${TMDB_BASE}/person/${personId}/movie_credits`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB movie credits failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbPersonMovieCredits;
+  const byId = new Map<number, TmdbSearchResult>();
+  for (const credit of data.crew) {
+    if (credit.job !== "Director") continue;
+    if (!byId.has(credit.id)) byId.set(credit.id, credit);
+  }
+  return [...byId.values()];
+}
+
+/**
+ * Well-regarded films from a decade — the source for the blind-spot
+ * shelves. Sorted by vote average rather than popularity, with a vote
+ * floor: popularity.desc on an old decade returns whatever is trending
+ * now, and no vote floor lets a film with four votes and a 10.0 average
+ * top the list.
+ */
+export async function discoverTmdbMoviesByDecade(
+  decade: number,
+  page = 1,
+): Promise<TmdbSearchResult[]> {
+  const url =
+    `${TMDB_BASE}/discover/movie?sort_by=vote_average.desc` +
+    `&primary_release_date.gte=${decade}-01-01` +
+    `&primary_release_date.lte=${decade + 9}-12-31` +
+    `&vote_count.gte=500&page=${page}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB decade discover failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbSearchResponse;
+  return data.results;
+}
+
+/**
+ * The same, for a genre. Genres are stored as names on the films table
+ * but discover takes ids — callers resolve via lib/tmdb/genres.ts.
+ */
+export async function discoverTmdbMoviesByGenre(
+  genreId: number,
+  page = 1,
+): Promise<TmdbSearchResult[]> {
+  const url =
+    `${TMDB_BASE}/discover/movie?sort_by=vote_average.desc` +
+    `&with_genres=${genreId}&vote_count.gte=500&page=${page}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB genre discover failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbSearchResponse;
+  return data.results;
 }

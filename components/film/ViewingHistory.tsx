@@ -187,9 +187,13 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
                 </div>
                 {entry.note && (
                   // The note is the one piece of a viewing you actually
-                  // wrote, so it gets the display face — this is the
-                  // only place body-length prose is set in the serif.
-                  <p className="text-label mt-2 font-(family-name:--display) text-[1.1875rem] leading-snug">
+                  // wrote, so it's set larger and in the full label
+                  // colour while the metadata around it stays muted.
+                  // It used to take the display face too, but that only
+                  // worked while the display face was a serif — Helvetica
+                  // beside Manrope at 19px reads as a mistake, not as a
+                  // second voice.
+                  <p className="text-label mt-2 text-[1.1875rem] leading-snug">
                     {entry.note}
                   </p>
                 )}

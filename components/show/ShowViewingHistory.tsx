@@ -194,7 +194,7 @@ export function ShowViewingHistory({ showId, initialEntries }: ShowViewingHistor
                   {entry.rating !== null && <Stars value={entry.rating} size={13} />}
                 </div>
                 {entry.note && (
-                  <p className="text-label mt-2 font-(family-name:--display) text-[1.1875rem] leading-snug">
+                  <p className="text-label mt-2 text-[1.1875rem] leading-snug">
                     {entry.note}
                   </p>
                 )}

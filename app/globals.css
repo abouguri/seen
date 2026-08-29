@@ -93,12 +93,18 @@
   --r-lg: 24px;
   --r-xl: 32px;
 
-  /* Type — a display/text pairing, both via next/font/google
-     (self-hosted, no runtime request), wired in RootLayout. Instrument
-     Serif carries the headlines and the numbers you're meant to feel
-     (counts, years); Manrope carries everything you're meant to read. */
+  /* Type — a display/text pairing. Manrope carries everything you're
+     meant to read, self-hosted via next/font. Helvetica carries the
+     headlines and the numbers you're meant to feel (counts, years).
+
+     Helvetica is not downloaded: it's a licensed desktop font that can't
+     be self-hosted, and every platform that has it already has it. The
+     stack falls through its metric clones instead — Arial on Windows,
+     Liberation Sans on Linux — all of which share Helvetica's widths, so
+     the tracking below holds wherever it lands. */
   --font: var(--font-manrope), -apple-system, "Segoe UI", system-ui, sans-serif;
-  --display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --display:
+    "Helvetica Neue", Helvetica, Arial, "Liberation Sans", "Nimbus Sans", sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 
   /* Type scale (§7.2) — size/line-height in rem so Dynamic Type (browser
@@ -362,33 +368,45 @@
     font-weight: 400;
   }
 
-  /* Display type — Instrument Serif, set tight and large. Three sizes
-     only: a screen's headline, a section heading, and a figure (counts,
-     years, ratings). Deliberately not part of the --fs-* scale above:
-     these are set in clamp() so they track the viewport rather than the
-     reading size, and nothing in the body-copy hierarchy should reach
-     for them. Never use display type below ~24px — at small sizes the
-     serif loses to Manrope on legibility and gains nothing. */
+  /* Display type — Helvetica, set tight and large. Three sizes only: a
+     screen's headline, a section heading, and a figure (counts, years,
+     ratings). Deliberately not part of the --fs-* scale above: these are
+     set in clamp() so they track the viewport rather than the reading
+     size, and nothing in the body-copy hierarchy should reach for them.
+
+     Never use display type below ~24px. That rule mattered when this was
+     a serif and it matters more now: Helvetica and Manrope are both
+     grotesques, so at small sizes the switch stops reading as a
+     different voice and starts reading as a mistake. The distinction
+     these carry is scale and tracking, not contrast of form. */
   .text-display-1 {
     font-family: var(--display);
     font-weight: 400;
     font-size: clamp(2.5rem, 1.4rem + 4.4vw, 4rem);
     line-height: 0.94;
-    letter-spacing: -0.035em;
+    /* Helvetica needs tighter tracking than the serif did at this size —
+       its default sidebearings are generous, and a 64px headline set
+       loose reads as set by accident. */
+    letter-spacing: -0.045em;
   }
   .text-display-2 {
     font-family: var(--display);
     font-weight: 400;
     font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.125rem);
     line-height: 1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
   .text-figure {
     font-family: var(--display);
-    font-weight: 400;
+    /* Medium, unlike the two above. A figure sits next to a bold
+       uppercase label in the stat cards and the add bar, and at 400
+       Helvetica it loses that pairing — the serif held its own there on
+       shape alone. */
+    font-weight: 500;
     line-height: 1.1;
-    letter-spacing: -0.02em;
-    /* Tabular so a column of counts or years doesn't jitter. */
+    letter-spacing: -0.03em;
+    /* Tabular so a column of counts or years doesn't jitter. Helvetica's
+       own figures are already uniform-width; this is for the fallbacks. */
     font-variant-numeric: tabular-nums;
   }
 

@@ -212,7 +212,7 @@ export function LogViewingSheet({
             not a second set of controls: each underlined part is a
             button that jumps to the field that sets it, so there's still
             exactly one place each value is entered. */}
-        <p className="font-(family-name:--display) text-[clamp(1.5rem,1.1rem+1.6vw,2.125rem)] leading-relaxed tracking-[-0.02em]">
+        <p className="font-(family-name:--display) text-[clamp(1.5rem,1.1rem+1.6vw,2.125rem)] leading-relaxed tracking-[-0.03em]">
           {copy.logViewing.sentenceLead}{" "}
           <SentencePart onFocusField={() => focusField(whenFieldRef)}>
             {whenPhrase(state)}
@@ -311,17 +311,19 @@ export function LogViewingSheet({
           >
             {copy.logViewing.noteLabel}
           </label>
-          {/* A textarea in the display face, not a single-line input:
-              this is the field you're most likely to write a real
-              sentence into, and the one thing on the screen worth
-              re-reading later. */}
+          {/* A textarea, not a single-line input: this is the field
+              you're most likely to write a real sentence into, and the
+              one thing on the screen worth re-reading later. Set large
+              rather than in the display face — see the note in
+              ViewingHistory.tsx for why that switch no longer earns its
+              keep at this size. */}
           <textarea
             id="log-note"
             rows={3}
             value={state.note}
             onChange={(event) => update("note", event.target.value)}
             placeholder={copy.logViewing.notePlaceholder}
-            className="bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent w-full resize-none rounded-md border p-4 font-(family-name:--display) text-xl leading-relaxed outline-offset-2"
+            className="bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent w-full resize-none rounded-md border p-4 text-xl leading-relaxed outline-offset-2"
           />
         </div>
 

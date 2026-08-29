@@ -7,19 +7,52 @@ import { APP_NAME } from "@/lib/constants";
  * Errors say what happened and what to do; empty states invite action.
  */
 export const copy = {
+  home: {
+    eyebrow: "From your archive",
+    title: "What to watch next",
+    // The page's claim, stated once at the top: these come from what
+    // you finished, and every one of them shows its working.
+    subtitle:
+      "Drawn from the films you've actually finished — every suggestion below says why it's here.",
+    learning: (count: number) =>
+      `Still learning your taste — ${count} ${count === 1 ? "film" : "films"} in. Log a few more and the director and decade shelves turn on.`,
+    emptyBody:
+      "Recommendations come from the films you've already logged, so there's nothing honest to suggest yet.",
+    emptyCta: "Add your first film",
+    emptyHint: "Add five films and this page turns on.",
+    nothingToSay:
+      "Nothing new to suggest right now. Log a few more films — or check back once the archive has grown.",
+  },
+
   signIn: {
-    title: "Sign in",
-    subtitle: `Enter your email and we'll send you a link to sign in to ${APP_NAME}.`,
+    // The page's argument, not a greeting. The sub-line is the one that
+    // has to survive edits: it defines the product against every other
+    // film app in a sentence, which is the whole reason a stranger
+    // should read past the headline.
+    headline: "You've seen more than you remember.",
+    sub: `${APP_NAME} is a private record of the films you've watched — not a queue of things you haven't.`,
     emailLabel: "Email",
     emailPlaceholder: "you@example.com",
     submit: "Send magic link",
     sending: "Sending link…",
     sentPrefix: "Check your email — we sent a sign-in link to",
+    sentHint: "The link works once and expires in an hour.",
     resend: "Use a different email",
-    errorSend: "Couldn't send the link. Check your email address and try again.",
-    errorCallback: "That link didn't work. Request a new one below.",
+    errorCallback: "That link didn't work — it may have expired or already been used. Request a new one below.",
+    // One message per thing that can actually go wrong, each naming the
+    // cause and the next move. There is deliberately no generic
+    // fallback-shaped copy here: errorUnknown still says what to do.
+    //
+    // Note there is no "wrong credentials" state. This is magic-link
+    // auth — there is no password to get wrong. The nearest real failure
+    // is an address the provider won't accept, which is errorEmail.
+    errorEmail: "That email address wasn't accepted. Check it for typos and try again.",
+    errorRateLimited: "Too many links requested. Wait about a minute, then try again.",
+    errorOffline: "Couldn't reach the server. Check your connection and try again.",
+    errorServer: `${APP_NAME} couldn't send the link just now. Try again in a moment.`,
   },
   nav: {
+    home: "For you",
     library: "Library",
     add: "Add",
     search: "Search",

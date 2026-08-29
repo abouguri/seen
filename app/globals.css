@@ -149,11 +149,6 @@
   --display:
     "Helvetica Neue", Helvetica, Arial, "Liberation Sans", "Nimbus Sans", sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
-  /* The wordmark's face, and only the wordmark's — see SeenLockup. Kept
-     as a token so the lockup never reaches for a raw family name, but
-     deliberately not wired into @theme: there is no font-lockup utility
-     for content to pick up by accident. */
-  --lockup: var(--font-inter), var(--font-manrope), system-ui, sans-serif;
 
   /* Type scale (§7.2) — size/line-height in rem so Dynamic Type (browser
      zoom / OS text size) scales the whole scale together. */
@@ -282,7 +277,7 @@
        lilac, and the violet has to be pushed further before it separates
        from the hover state. The token names and the geometry are
        unchanged; only the weights move. */
-    --tile-mix: 34%;
+    --tile-mix: 25%;
 
     --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
     --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
@@ -320,7 +315,7 @@
   --scrim: #1e1814;
   --pattern-alpha: 11%;
 
-  --tile-mix: 34%;
+  --tile-mix: 25%;
 
   --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
   --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
@@ -593,11 +588,6 @@
   /* The small uppercase label that sits above a display heading or
      titles a stat card. Its size is fixed rather than scaled — it's a
      signpost, not copy. */
-  /* The wordmark. A single-purpose utility rather than a --font-* theme
-     entry, so it can't be applied to copy. */
-  .font-lockup {
-    font-family: var(--lockup);
-  }
 
   .text-eyebrow {
     font-size: 0.6875rem;

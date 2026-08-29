@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { NAV_ITEMS, isNavItemActive } from "@/components/shell/nav-items";
-import { SeenLockup } from "@/components/shell/SeenMark";
+import { SeenMark } from "@/components/shell/SeenMark";
+import { APP_NAME } from "@/lib/constants";
 
 /**
  * Desktop navigation: a 76px icon rail on the recessed --bg-2 ground,
@@ -27,23 +28,12 @@ export function SideRail() {
       aria-label="Primary"
       className="border-separator bg-bg-2 hidden w-19 shrink-0 flex-col items-center gap-1.5 border-r py-5 md:flex"
     >
-      {/* The lockup rather than the bare mark, in the mono tone — one
-          colour keeps the accent meaning "you can press this", which
-          matters two rows below where the active nav item is a violet
-          tint.
-
-          Sized 16, not the 20 the brief asks for. At 20 the lockup
-          measures 72.6px against this rail's 76, which puts the N hard
-          against the border with 1.7px to spare — it reads as an
-          overflow bug rather than a logo. 20px was written for the top
-          bar this rail replaced. 16 is the largest that leaves real
-          margin, and it's the size the mark was tuned to stay legible
-          at anyway. SeenLockup carries its own role="img" and label. */}
       <Link
         href="/library"
-        className="focus-visible:outline-accent text-label mb-6 rounded-xs outline-offset-4"
+        className="focus-visible:outline-accent mb-6 rounded-xs outline-offset-4"
       >
-        <SeenLockup size={16} tone="mono" />
+        <SeenMark />
+        <span className="sr-only">{APP_NAME}</span>
       </Link>
 
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

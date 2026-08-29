@@ -86,6 +86,43 @@
      receding, not as a black sheet dropped over it. */
   --scrim: #040408;
 
+  /* Scrollbar. The browser's own chrome, brought into the palette: a
+     thin transparent gutter with a rounded thumb, so it reads as part of
+     the surface it scrolls rather than as the operating system showing
+     through. Not new colours — the thumb is --label at low alpha and the
+     drag state is the accent, which is what makes the whole thing follow
+     the palette into light mode.
+
+     --scrollbar-size is the hit target, not the thumb: the thumb is
+     inset by --scrollbar-thumb-inset on each side (a transparent border
+     with background-clip: padding-box), so the visible bar is 6px while
+     the grab area stays a full 12px. Thin to look at, not thin to hit.
+
+     Alphas are per-mode rather than shared because equal alpha does not
+     buy equal contrast in both directions — a light thumb on --bg at 20%
+     measures the same 1.7:1 as a dark thumb on paper at 24%, so light
+     mode carries slightly more. Same asymmetry, same reason, as
+     --pattern-alpha above. */
+  --scrollbar-size: 12px;
+  --scrollbar-thumb-inset: 3px;
+  /* Transparent, not a tint: the gutter then takes the colour of
+     whatever it scrolls — the app ground, a sheet, a --surface-1 panel —
+     instead of stamping one background over all three. */
+  --scrollbar-track: transparent;
+  /* Alpha mixes rather than flat greys, so the bar tints itself against
+     whatever it happens to be scrolling. Same color-mix() dependency the
+     pattern library above already carries — and the same degradation if
+     it's missing (Lightning CSS emits the un-mixed token as the fallback
+     and guards the mix behind @supports; a hand-written fallback here is
+     overwritten by that one, so there's no point adding it). */
+  --scrollbar-thumb: color-mix(in srgb, var(--label) 20%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 32%, transparent);
+  /* The one place the accent is allowed in: while you are actually
+     dragging. It resolves to the lilac on dark and the violet on paper,
+     and at this alpha it reads as a warmer grey that happens to be
+     violet — a confirmation you have hold of it, not a colour accent. */
+  --scrollbar-thumb-active: color-mix(in srgb, var(--accent-text) 58%, transparent);
+
   /* Shape */
   --r-xs: 8px;
   --r-sm: 12px;
@@ -224,6 +261,19 @@
     /* Paper takes a touch more: the same alpha of a dark tint reads
        fainter on a light ground than a light tint does on a dark one. */
     --pattern-alpha: 11%;
+
+    /* Same correction for the scrollbar thumb — a dark thumb on paper
+       needs a few more points of alpha to land on the same measured
+       contrast its light counterpart has on --bg: 1.68:1 idle against
+       dark's 1.72:1, 2.58:1 hover against 2.67:1. The drag state takes
+       more again (3.70:1 here, 4.27:1 there) because light mode's
+       --accent-text is the saturated violet where dark's is the pale
+       lilac, and the violet has to be pushed further before it separates
+       from the hover state. The token names and the geometry are
+       unchanged; only the weights move. */
+    --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
+    --scrollbar-thumb-active: color-mix(in srgb, var(--accent-text) 72%, transparent);
   }
 }
 
@@ -256,6 +306,10 @@
   --material-chrome: rgba(239, 233, 225, 0.72);
   --scrim: #1e1814;
   --pattern-alpha: 11%;
+
+  --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
+  --scrollbar-thumb-active: color-mix(in srgb, var(--accent-text) 72%, transparent);
 }
 
 /* Tailwind v4 CSS-first theme — maps tokens onto utility classes so
@@ -320,6 +374,117 @@
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+
+  /* --------------------------------------------------------------------
+     Scrollbar
+     Two implementations of the same design, because no single standard
+     covers both engines: Firefox gets the standard `scrollbar-width` /
+     `scrollbar-color` pair, Chromium/WebKit get the ::-webkit-scrollbar
+     pseudo-elements. Both read the same tokens, so there is one place to
+     retune either mode.
+
+     These live in @layer base deliberately. Everything Tailwind emits —
+     utilities, and the .no-scrollbar component class below — sits in a
+     later layer, so any scrollable component can opt out or restyle
+     without an !important or a specificity fight. The other override
+     path is the tokens: custom properties inherit into the scrollbar
+     pseudo-elements, so `.panel { --scrollbar-thumb: … }` retints just
+     that panel's bar.
+     -------------------------------------------------------------------- */
+
+  /* The standard properties, fenced off to the engines that have
+     nothing else — in practice Firefox.
+
+     They cannot be declared unconditionally. Chromium supports both
+     these and the ::-webkit-scrollbar pseudo-elements, and when a
+     scroller has both it honours the standard properties and drops the
+     pseudo-element styling on the floor. Declared globally, they would
+     quietly cost Chromium the whole implementation below: no hover or
+     active state (`scrollbar-color` has no notion of either), no 12px
+     hit target around the 6px bar, no thumb minimum, and a pair of
+     native arrow buttons at the ends that ::-webkit-scrollbar-button
+     then can't remove. The bar still looked right, which is what makes
+     it worth a comment — the states were simply gone.
+
+     `selector(::-webkit-scrollbar)` is the honest way to ask the
+     question: it's true exactly where the richer implementation is
+     available, so each engine takes one path and never both.
+
+     Inside the query, the split is about inheritance: `scrollbar-color`
+     inherits, so the root declaration reaches every scroll container and
+     a component can retint a subtree by redeclaring it. `scrollbar-
+     width` doesn't, so it goes on the universal selector — otherwise
+     nested panels keep Firefox's full-width bar while the colours
+     change. It's inert on anything that doesn't scroll, and .no-
+     scrollbar's `scrollbar-width: none` still wins from a later layer.
+     `thin` is the narrower of the two keywords Firefox offers; there is
+     no numeric control, which is most of why the rules below exist. */
+  @supports not selector(::-webkit-scrollbar) {
+    html {
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    * {
+      scrollbar-width: thin;
+    }
+  }
+
+  /* Chromium/WebKit. Unprefixed on purpose: a scoped selector would
+     leave every nested scroll container on the system scrollbar, which
+     is the mismatch this is here to remove. */
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    /* The inset that makes a 12px gutter look like a 6px bar: a
+       transparent border clipped away from the background. Border rather
+       than padding because the thumb box has no padding to give, and
+       transparent rather than a colour because it must show whatever
+       surface is scrolling underneath. */
+    border: var(--scrollbar-thumb-inset) solid transparent;
+    background-clip: padding-box;
+    /* Fully rounded ends. The bar is 6px wide, so this is a 3px radius
+       in practice — a capsule, not a decorated shape. */
+    border-radius: 999px;
+    /* A very long page otherwise shrinks the thumb to a few pixels of
+       drag target. Floors it at a size that stays grabbable (both axes,
+       since one applies to the vertical bar and one to the horizontal). */
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+
+  /* :active is the drag itself — it holds for as long as the pointer is
+     down, including when it wanders off the bar. */
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-active);
+  }
+
+  /* Where a vertical and a horizontal bar meet. Left as the surface
+     rather than filled, so the corner doesn't read as a notch cut out of
+     the panel. */
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* The arrow buttons at each end of a Windows/Linux scrollbar. A guard
+     rather than a fix for anything observed here: Chromium doesn't draw
+     them on a custom scrollbar on this platform with or without the
+     rule. It costs nothing and keeps a themed platform from bolting
+     system chrome onto either end of the thumb. */
+  ::-webkit-scrollbar-button {
+    display: none;
   }
 }
 
@@ -668,6 +833,31 @@
 @media (prefers-contrast: more) {
   :root {
     --pattern-alpha: 0%;
+  }
+}
+
+/* prefers-contrast, the other direction: the scrollbar is a control, not
+   decoration, so it gets stronger here rather than removed. The idle
+   thumb moves from ~1.7:1 to roughly 4:1 against the ground and the
+   states keep their spacing above it. Both modes take the same weights —
+   they're mixed from --label, which has already flipped by this point. */
+@media (prefers-contrast: more) {
+  :root {
+    --scrollbar-thumb: color-mix(in srgb, var(--label) 45%, transparent);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 62%, transparent);
+    --scrollbar-thumb-active: color-mix(in srgb, var(--label) 80%, transparent);
+  }
+}
+
+/* Forced colours (Windows high contrast): give the scrollbar back. The
+   user has replaced the palette with their own, and a bar drawn from
+   tokens that no longer resolve to what they chose is worse than the OS
+   one. This releases the Firefox path explicitly; on the WebKit path the
+   geometry above stays, but the browser force-adjusts the part colours to
+   the user's own, which is the outcome that matters. */
+@media (forced-colors: active) {
+  html {
+    scrollbar-color: auto;
   }
 }
 

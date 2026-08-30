@@ -136,6 +136,15 @@
   --accent-line: rgba(110, 81, 232, 0.7);
   --danger-glow: rgba(255, 95, 87, 0.16);
 
+  /* The homepage lead's backdrop. A film still is a dark image, so on a
+     dark surface it can sit at full strength and read as atmosphere;
+     over paper the same still reads as a grey slab dropped on the card,
+     which is why both the image's opacity and the veil covering it are
+     per-mode rather than one setting that happens to suit dark. */
+  --lead-backdrop-opacity: 1;
+  --lead-veil-near: 82%;
+  --lead-veil-far: 40%;
+
   /* The focus ring, app-wide. Deliberately not --accent: a 2px #5436ce
      hairline measures 2.63:1 on the near-black ground, which is under
      the 3:1 a non-text indicator needs and reads as no ring at all on a
@@ -341,6 +350,14 @@
     --dot-ring: rgba(84, 54, 206, 0.22);
     --accent-line: rgba(84, 54, 206, 0.62);
     --danger-glow: rgba(196, 50, 42, 0.14);
+
+    /* Paper needs the still pushed a long way back: half opacity and a
+       veil that never drops below three-quarters surface, or the card
+       reads as a grey panel rather than as white card with a hint of
+       the film on it. */
+    --lead-backdrop-opacity: 0.5;
+    --lead-veil-near: 94%;
+    --lead-veil-far: 74%;
   }
 }
 
@@ -393,6 +410,9 @@
   --dot-ring: rgba(84, 54, 206, 0.22);
   --accent-line: rgba(84, 54, 206, 0.62);
   --danger-glow: rgba(196, 50, 42, 0.14);
+  --lead-backdrop-opacity: 0.5;
+  --lead-veil-near: 94%;
+  --lead-veil-far: 74%;
 
   --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
   --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
@@ -1135,6 +1155,63 @@
     caret-color: var(--label);
     border-color: color-mix(in srgb, var(--accent) 45%, var(--separator));
     transition: background-color 9999s ease-out 0s;
+  }
+
+  /* ==========================================================================
+     Homepage hero band
+     The sign-in composition, brought to the one other screen that opens
+     with an argument rather than with content — but stopped at the lead.
+     Below it the shelves run on plain ground: a ledger grid behind a
+     six-across poster grid is a moiré, and the recommendation cards have
+     to win.
+
+     Same layers, one substitution. Sign-in has no content, so the mark
+     stands in as its image; here the lead film's own backdrop does that
+     job, which is why there is no cluster on this page.
+     ========================================================================== */
+
+  /* Fades the band out at the bottom as well as across, so it ends by
+     dissolving into the page rather than on a hard edge the shelves
+     would then sit under. */
+  .home-veil {
+    background-image:
+      linear-gradient(to bottom, transparent 0%, transparent 62%, var(--bg) 100%),
+      linear-gradient(
+        to right,
+        var(--bg) 0%,
+        color-mix(in srgb, var(--bg) 55%, transparent) 34%,
+        transparent 72%
+      );
+  }
+
+  /* The lead's backdrop, dissolved into the card's own surface. Anchored
+     right so the still's subject sits opposite the text rather than
+     under it — the same left-content / right-image split the sign-in
+     page uses, at card scale. */
+  /* Stacked layout (below the card's own sm:flex-row switch): the text
+     runs the full width, so there is no "text side" for a left-to-right
+     veil to protect. It fades upward instead, which puts the still
+     behind the poster at the top and clean surface under the copy. */
+  .home-lead-veil {
+    background-image: linear-gradient(
+      to top,
+      var(--surface-1) 0%,
+      color-mix(in srgb, var(--surface-1) var(--lead-veil-near), transparent) 62%,
+      color-mix(in srgb, var(--surface-1) var(--lead-veil-far), transparent) 100%
+    );
+  }
+
+  @media (width >= 40rem) {
+    .home-lead-veil {
+      background-image:
+        linear-gradient(
+          to right,
+          var(--surface-1) 0%,
+          color-mix(in srgb, var(--surface-1) var(--lead-veil-near), transparent) 46%,
+          color-mix(in srgb, var(--surface-1) var(--lead-veil-far), transparent) 100%
+        ),
+        linear-gradient(to top, var(--surface-1) 0%, transparent 55%);
+    }
   }
 
   @keyframes seen-spin {

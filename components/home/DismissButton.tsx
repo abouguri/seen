@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { dismissRecommendation } from "@/lib/recommendations/actions";
+import { copy } from "@/lib/copy";
 
 /**
  * "Not for me" — the ghost half of the lead's two actions.
@@ -21,10 +22,10 @@ export function DismissButton({ filmId, title }: { filmId: number; title: string
     <Button
       variant="ghost"
       disabled={pending}
-      aria-label={`Not for me — don't recommend ${title} again`}
+      aria-label={copy.home.leadDismissLabel(title)}
       onClick={() => startTransition(() => dismissRecommendation(filmId))}
     >
-      {pending ? "Dismissing…" : "Not for me"}
+      {pending ? copy.home.leadDismissing : copy.home.leadDismiss}
     </Button>
   );
 }

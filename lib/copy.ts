@@ -9,7 +9,21 @@ import { APP_NAME } from "@/lib/constants";
 export const copy = {
   home: {
     eyebrow: "From your archive",
-    title: "What to watch next",
+    // Split across two lines, second one accented — the sign-in page's
+    // voice. "next." is the half that carries the promise, so it's the
+    // half that turns.
+    headlineLead: "What to watch",
+    headlineAccent: "next.",
+    /** The lead's own label, above the one film being argued for. */
+    leadEyebrow: "The one to watch next",
+    leadAction: "Add to library",
+    leadDismiss: "Not for me",
+    leadDismissing: "Dismissing…",
+    /** aria-label for the dismiss control — names the film, since "Not
+     *  for me" alone is meaningless out of context in a screen reader's
+     *  element list. */
+    leadDismissLabel: (title: string) => `Not for me — don't recommend ${title} again`,
+    rewatchBadge: "Rewatch",
     // The page's claim, stated once at the top: these come from what
     // you finished, and every one of them shows its working.
     subtitle:

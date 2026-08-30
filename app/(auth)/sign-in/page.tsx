@@ -42,7 +42,7 @@ export default async function SignInPage({
           instead of sliding under the column. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(var(--ledger)_1px,transparent_1px),linear-gradient(90deg,var(--ledger)_1px,transparent_1px)] bg-[position:100%_0] bg-[size:112px_152px]"
+        className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(var(--ledger)_1px,transparent_1px),linear-gradient(90deg,var(--ledger)_1px,transparent_1px)] bg-position-[100%_0] bg-size-[112px_152px]"
       />
 
       {/* Two washes, cool then warm, both well off-canvas so only the
@@ -50,7 +50,7 @@ export default async function SignInPage({
           wash over paper reads as a grey stain rather than as light. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-1 bg-[radial-gradient(ellipse_at_112%_-12%,color-mix(in_srgb,var(--wash-cool)_var(--wash-alpha),transparent)_0_26%,transparent_52%),radial-gradient(ellipse_at_78%_118%,color-mix(in_srgb,var(--warm)_var(--wash-alpha),transparent)_0_24%,transparent_48%)] bg-[size:100%_100%] bg-no-repeat"
+        className="pointer-events-none absolute inset-0 z-1 bg-[radial-gradient(ellipse_at_112%_-12%,color-mix(in_srgb,var(--wash-cool)_var(--wash-alpha),transparent)_0_26%,transparent_52%),radial-gradient(ellipse_at_78%_118%,color-mix(in_srgb,var(--warm)_var(--wash-alpha),transparent)_0_24%,transparent_48%)] bg-size-[100%_100%] bg-no-repeat"
       />
 
       <MarkCluster />
@@ -62,7 +62,7 @@ export default async function SignInPage({
           Sits above the veil: grain under a wash isn't grain. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-4 bg-[radial-gradient(circle_at_20%_20%,color-mix(in_srgb,var(--grain-cool)_var(--grain-alpha),transparent)_0_0.55px,transparent_0.8px),radial-gradient(circle_at_70%_35%,color-mix(in_srgb,var(--grain-warm)_var(--grain-alpha),transparent)_0_0.45px,transparent_0.75px),radial-gradient(circle_at_40%_80%,color-mix(in_srgb,var(--grain-cool)_var(--grain-alpha),transparent)_0_0.4px,transparent_0.7px)] bg-[size:17px_17px,23px_23px,29px_29px]"
+        className="pointer-events-none absolute inset-0 z-4 bg-[radial-gradient(circle_at_20%_20%,color-mix(in_srgb,var(--grain-cool)_var(--grain-alpha),transparent)_0_0.55px,transparent_0.8px),radial-gradient(circle_at_70%_35%,color-mix(in_srgb,var(--grain-warm)_var(--grain-alpha),transparent)_0_0.45px,transparent_0.75px),radial-gradient(circle_at_40%_80%,color-mix(in_srgb,var(--grain-cool)_var(--grain-alpha),transparent)_0_0.4px,transparent_0.7px)] bg-size-[17px_17px,23px_23px,29px_29px]"
       />
 
       <header className="relative z-5 flex items-center px-[clamp(20px,6vw,88px)] py-[clamp(20px,3vw,36px)]">

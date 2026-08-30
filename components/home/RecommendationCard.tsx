@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PosterThumb } from "@/components/film/PosterThumb";
+import { copy } from "@/lib/copy";
 import type { Recommendation } from "@/lib/recommendations/types";
 
 /**
@@ -19,10 +20,7 @@ import type { Recommendation } from "@/lib/recommendations/types";
 export function RecommendationCard({ film }: { film: Recommendation }) {
   return (
     <li>
-      <Link
-        href={`/film/${film.id}`}
-        className="focus-visible:outline-accent group block rounded-sm outline-offset-4"
-      >
+      <Link href={`/film/${film.id}`} className="group block rounded-sm outline-offset-4">
         <div className="relative transition-[translate,box-shadow] duration-(--t-card) ease-(--default-transition-timing-function) group-hover:-translate-y-1 group-hover:shadow-[0_14px_30px_-8px_rgba(0,0,0,.55)] group-focus-visible:-translate-y-1">
           <PosterThumb
             title={film.title}
@@ -34,18 +32,16 @@ export function RecommendationCard({ film }: { film: Recommendation }) {
           />
           {film.isRewatch && (
             <span className="bg-scrim/70 text-caption border-separator-strong text-label absolute top-2 left-2 rounded-full border px-2 py-0.5 font-bold backdrop-blur-md">
-              Rewatch
+              {copy.home.rewatchBadge}
             </span>
           )}
         </div>
 
-        <p className="text-footnote mt-2 font-bold">
+        <p className="text-footnote mt-2.5 font-bold">
           {film.title}
-          {film.year !== null && (
-            <span className="text-label-3 font-normal"> {film.year}</span>
-          )}
+          {film.year !== null && <span className="text-label-3 font-normal"> {film.year}</span>}
         </p>
-        <p className="text-caption text-label-2 mt-0.5 text-pretty">{film.reason}</p>
+        <p className="text-caption text-label-2 mt-1 text-pretty">{film.reason}</p>
       </Link>
     </li>
   );

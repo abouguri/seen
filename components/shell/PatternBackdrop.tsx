@@ -15,6 +15,11 @@ import { usePathname } from "next/navigation";
  * top (a card, the nav rail, a sheet) simply covers them.
  */
 const ROUTE_PATTERNS: { prefix: string; pattern: string }[] = [
+  // The homepage. Atmosphere rather than structure, matching /search —
+  // both are screens about films you haven't seen yet. Safe to match on
+  // "/" because the test below is exact-or-slash-prefixed: every path
+  // starts with "/", but none starts with "//".
+  { prefix: "/", pattern: "pattern-projector-veil" },
   // Contact sheet under the contact sheet — the frame grid is set at 2:3
   // to rhyme with the poster tiles sitting on it.
   { prefix: "/library", pattern: "pattern-contact-ledger" },

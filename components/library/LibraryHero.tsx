@@ -39,7 +39,7 @@ export function LibraryHero({ count, countNoun }: { count: number; countNoun: st
       <div className="flex items-center gap-2.5 pb-1.5">
         <Link
           href="/search"
-          className="text-footnote text-label-3 border-separator bg-surface-1 hover:text-label-2 focus-visible:outline-accent flex h-11.5 min-w-0 items-center gap-2.5 rounded-md border px-3.5 font-semibold outline-offset-2 transition-colors duration-(--t-hover) ease-(--default-transition-timing-function) sm:min-w-70"
+          className="text-footnote text-label-3 border-separator bg-surface-1 hover:text-label-2 flex h-11.5 min-w-0 items-center gap-2.5 rounded-md border px-3.5 font-semibold outline-offset-2 transition-colors duration-(--t-hover) ease-(--default-transition-timing-function) sm:min-w-70"
         >
           <SearchIcon size={16} strokeWidth={1.8} className="shrink-0" />
           <span className="flex-1 truncate">{copy.library.searchAffordance}</span>

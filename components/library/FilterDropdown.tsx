@@ -214,7 +214,7 @@ function Option({
           onSelect();
         }
       }}
-      className="text-body hover:bg-surface-2 focus-visible:outline-accent flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left -outline-offset-2 transition-colors duration-(--t-hover)"
+      className="text-body hover:bg-surface-2 flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-left -outline-offset-2 transition-colors duration-(--t-hover)"
     >
       {/* --accent-text, not --accent: the fill violet is 2.45:1 on
           --surface-1 and this tick is the only visual mark of which row

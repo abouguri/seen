@@ -30,7 +30,7 @@ export function SideRail() {
     >
       <Link
         href="/library"
-        className="focus-visible:outline-accent mb-6 rounded-xs outline-offset-4"
+        className="mb-6 rounded-xs outline-offset-4"
       >
         <SeenMark />
         <span className="sr-only">{APP_NAME}</span>
@@ -45,7 +45,7 @@ export function SideRail() {
             aria-current={active ? "page" : undefined}
             title={label}
             className={clsx(
-              "focus-visible:outline-accent relative grid h-12 w-12 place-items-center rounded-md outline-offset-2 transition-colors duration-(--t-hover) ease-(--default-transition-timing-function)",
+              "relative grid h-12 w-12 place-items-center rounded-md outline-offset-2 transition-colors duration-(--t-hover) ease-(--default-transition-timing-function)",
               active
                 ? "bg-accent-dim text-accent-text"
                 : "text-label-3 hover:text-label-2",

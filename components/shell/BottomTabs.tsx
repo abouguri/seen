@@ -32,7 +32,7 @@ export function BottomTabs() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={clsx(
-              "focus-visible:outline-accent relative flex min-h-14 flex-1 flex-col items-center justify-center gap-1 -outline-offset-2 transition-colors duration-(--t-hover) ease-(--default-transition-timing-function)",
+              "relative flex min-h-14 flex-1 flex-col items-center justify-center gap-1 -outline-offset-2 transition-colors duration-(--t-hover) ease-(--default-transition-timing-function)",
               active ? "text-accent-text" : "text-label-3",
             )}
           >

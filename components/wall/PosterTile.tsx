@@ -95,7 +95,7 @@ export function PosterTile({
       onClick={handleClick}
       whileTap={{ scale: reduceMotion || !interactive ? 1 : 0.96 }}
       transition={SPRING}
-      className="group focus-visible:outline-accent relative aspect-[2/3] w-full overflow-hidden rounded-md outline-offset-2"
+      className="group relative aspect-[2/3] w-full overflow-hidden rounded-md outline-offset-2"
     >
       <div className="absolute inset-0">
         {url ? (

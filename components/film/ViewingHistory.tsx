@@ -179,7 +179,7 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
               <button
                 type="button"
                 onClick={() => setEditingEntry(entry)}
-                className="focus-visible:outline-accent min-w-0 flex-1 rounded-xs text-left outline-offset-2"
+                className="min-w-0 flex-1 rounded-xs text-left outline-offset-2"
               >
                 <div className="flex flex-wrap items-baseline gap-2.5">
                   <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>

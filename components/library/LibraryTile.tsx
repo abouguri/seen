@@ -136,7 +136,7 @@ export function LibraryTile({
           aria-label={
             rewatched ? `${film.title}, seen ${film.watchCount} times` : film.title
           }
-          className="focus-visible:outline-accent relative block aspect-2/3 w-full overflow-hidden rounded-sm outline-offset-2"
+          className="relative block aspect-2/3 w-full overflow-hidden rounded-sm outline-offset-2"
         >
           <div
             ref={imgRef}

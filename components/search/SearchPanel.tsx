@@ -120,9 +120,15 @@ export function SearchPanel({
 
   return (
     <div className="flex flex-1 flex-col">
+      {/* The ring goes on the row, not the input. The field itself is
+          transparent and flex-1, so an outline around it would trace a
+          box nobody can see the edges of — the row with the icon in it
+          is what reads as the control. focus-within is what makes that
+          work, and it's why the input below can keep outline-none: the
+          indicator is drawn, just one level up. */}
       <div
         className={clsx(
-          "flex items-center gap-4",
+          "flex items-center gap-4 rounded-md outline-offset-2 focus-within:outline-2 focus-within:outline-(--focus-ring)",
           isPage ? "border-separator border-b px-4 pt-12 pb-5 md:px-9" : "px-4 py-3",
         )}
       >
@@ -188,7 +194,7 @@ export function SearchPanel({
                     <Link
                       href={hrefFor(item)}
                       onClick={onNavigate}
-                      className="focus-visible:outline-accent block rounded-sm outline-offset-2"
+                      className="block rounded-sm outline-offset-2"
                     >
                       <SeenPoster item={item} />
                       <p className="text-footnote mt-2 truncate font-bold">{item.title}</p>
@@ -260,7 +266,7 @@ function ResultRow({ item, onNavigate }: { item: SearchResult; onNavigate?: () =
       <Link
         href={hrefFor(item)}
         onClick={onNavigate}
-        className="hover:bg-surface-2 focus-visible:outline-accent group flex items-center gap-3.5 rounded-sm p-2 -outline-offset-2 transition-colors duration-(--t-hover)"
+        className="hover:bg-surface-2 group flex items-center gap-3.5 rounded-sm p-2 -outline-offset-2 transition-colors duration-(--t-hover)"
       >
         <PosterThumb
           title={item.title}

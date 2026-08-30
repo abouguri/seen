@@ -16,7 +16,12 @@ export const copy = {
     headlineAccent: "next.",
     /** The lead's own label, above the one film being argued for. */
     leadEyebrow: "The one to watch next",
-    leadAction: "Add to library",
+    // Not "Add to library". This is a link to the film's page, where a
+    // viewing is logged — it does not itself add anything, and a button
+    // whose label promises an action it doesn't perform reads as broken
+    // even when the navigation works. Adding a film in SEEN *is* logging
+    // a viewing of it, so the label says the thing that actually happens.
+    leadAction: "Log a viewing",
     leadDismiss: "Not for me",
     leadDismissing: "Dismissing…",
     /** aria-label for the dismiss control — names the film, since "Not
@@ -36,6 +41,25 @@ export const copy = {
     emptyHint: "Add five films and this page turns on.",
     nothingToSay:
       "Nothing new to suggest right now. Log a few more films — or check back once the archive has grown.",
+  },
+
+  notFound: {
+    eyebrow: "Not found",
+    title: "That page isn't in the archive.",
+    // Names the two things that actually cause this — a stale link and a
+    // typo — rather than apologising in the abstract.
+    body: "The link may be out of date, or the address may have a typo in it. Nothing has been lost from your library.",
+    action: "Back to your library",
+  },
+
+  appError: {
+    eyebrow: "Something went wrong",
+    title: "That didn't load.",
+    // "Your archive is safe" is the load-bearing sentence. A crash on a
+    // page that exists to hold years of someone's records invites
+    // exactly one fear, and it costs a clause to answer it.
+    body: "Something failed while loading this page. Your archive is safe — nothing you've logged is affected.",
+    action: "Try again",
   },
 
   signIn: {
@@ -203,6 +227,13 @@ export const copy = {
     whenUnknown: "Don't remember",
     dateLabel: "Date",
     yearLabel: "Year",
+    // These replace the browser's native validation tooltips. Each says
+    // what's wrong in the app's voice rather than the platform's — "Value
+    // must be 08/30/2026 or earlier" is accurate and reads like a
+    // developer error.
+    errorFutureDate: "That date hasn't happened yet. Pick today or earlier.",
+    errorFutureYear: "That year hasn't happened yet.",
+    errorEarlyYear: "Film didn't exist yet — 1888 is as far back as this goes.",
     eraLabel: "What was going on?",
     eraPlaceholder: "as a kid",
     eraSuggestions: ["as a kid", "at university", "during lockdown"],
@@ -245,7 +276,10 @@ export const copy = {
     title: "Stats",
     emptyTitle: "No numbers yet.",
     emptyMessage: "Log a few viewings and this fills in on its own.",
-    filmsPerYear: "Titles per year",
+    // "per year" reads as "per year you watched" when it sits directly
+    // above "Decades watched", which genuinely is about viewing history.
+    // These bars are keyed by release year, so the label says so.
+    filmsPerYear: "Titles by release year",
     decadesWatched: "Decades watched",
     mostSeenDirectors: "Most-seen directors",
     totalHours: "Total hours watched",

@@ -150,7 +150,40 @@ export function LogViewingSheet({
       .catch(() => setTagSuggestions([]));
   }, [open, showTags]);
 
-  const canSubmit = state.whenMode !== "pickDate" || state.dateValue.length > 0;
+  /**
+   * The one thing you can enter here that isn't true: a viewing that
+   * hasn't happened yet.
+   *
+   * This was previously enforced only by `max` on the two inputs, which
+   * works — the browser blocks the submit — but reports it through the
+   * native validation tooltip, in the platform's font, positioned by the
+   * platform. Every other message in this sheet is the app's own, so
+   * that one popup read as something breaking through. The rule now
+   * lives here, the form carries noValidate, and the message renders
+   * like everything else.
+   *
+   * `max` stays on the inputs regardless: it drives the date picker's
+   * own greyed-out days, which is a better affordance than any error
+   * message and costs nothing now that it can't be the thing reporting
+   * the failure.
+   */
+  const whenError = (() => {
+    if (state.whenMode === "pickDate") {
+      if (state.dateValue.length === 0) return null; // not an error yet, just incomplete
+      return state.dateValue > localTodayIsoDate() ? copy.logViewing.errorFutureDate : null;
+    }
+    if (state.whenMode === "year") {
+      const year = Number(state.yearValue);
+      if (state.yearValue.length === 0 || Number.isNaN(year)) return null;
+      if (year > new Date().getFullYear()) return copy.logViewing.errorFutureYear;
+      if (year < 1888) return copy.logViewing.errorEarlyYear;
+      return null;
+    }
+    return null;
+  })();
+
+  const canSubmit =
+    whenError === null && (state.whenMode !== "pickDate" || state.dateValue.length > 0);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setState((prev) => ({ ...prev, [key]: value }));
@@ -206,7 +239,7 @@ export function LogViewingSheet({
       onClose={onClose}
       title={isEditing ? copy.logViewing.editTitle : copy.logViewing.title}
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
         {/* The redesign states the viewing back to you as a sentence
             rather than a stack of labelled fields. It's a live summary,
             not a second set of controls: each underlined part is a
@@ -247,7 +280,7 @@ export function LogViewingSheet({
               onChange={(event) => update("dateValue", event.target.value)}
               max={localTodayIsoDate()}
               aria-label={copy.logViewing.dateLabel}
-              className="text-body bg-surface-2 text-label mt-3 min-h-11 w-full rounded-md px-3 outline-none"
+              className="text-body bg-surface-2 text-label mt-3 min-h-11 w-full rounded-md px-3 outline-offset-2"
             />
           )}
 
@@ -261,7 +294,7 @@ export function LogViewingSheet({
               min={1888}
               max={new Date().getFullYear()}
               aria-label={copy.logViewing.yearLabel}
-              className="text-body bg-surface-2 text-label mt-3 min-h-11 w-32 rounded-md px-3 outline-none"
+              className="text-body bg-surface-2 text-label mt-3 min-h-11 w-32 rounded-md px-3 outline-offset-2"
             />
           )}
 
@@ -274,7 +307,7 @@ export function LogViewingSheet({
                 onChange={(event) => update("eraValue", event.target.value)}
                 placeholder={copy.logViewing.eraPlaceholder}
                 aria-label={copy.logViewing.eraLabel}
-                className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 w-full rounded-md px-3 outline-none"
+                className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 w-full rounded-md px-3 outline-offset-2"
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {copy.logViewing.eraSuggestions.map((suggestion) => (
@@ -290,6 +323,19 @@ export function LogViewingSheet({
               </div>
             </div>
           )}
+
+          {/* Replaces the browser's native validation tooltip. Present
+              in the DOM only while it applies, but role="alert" on a
+              node that mounts with its text already in place can be
+              missed, so it's rendered empty and hidden instead — the
+              same pattern as the sign-in form's error. */}
+          <p
+            role="alert"
+            aria-live="polite"
+            className={`text-footnote text-danger mt-3 ${whenError ? "" : "hidden"}`}
+          >
+            {whenError ?? ""}
+          </p>
         </div>
 
         <div className="border-separator flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-5">
@@ -323,7 +369,7 @@ export function LogViewingSheet({
             value={state.note}
             onChange={(event) => update("note", event.target.value)}
             placeholder={copy.logViewing.notePlaceholder}
-            className="bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent w-full resize-none rounded-md border p-4 text-xl leading-relaxed outline-offset-2"
+            className="bg-surface-2 border-separator text-label placeholder:text-label-3 w-full resize-none rounded-md border p-4 text-xl leading-relaxed outline-offset-2"
           />
         </div>
 
@@ -339,7 +385,7 @@ export function LogViewingSheet({
               value={state.place}
               onChange={(event) => update("place", event.target.value)}
               placeholder={copy.logViewing.placePlaceholder}
-              className="text-body bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent min-h-11 w-full rounded-md border px-3 outline-offset-2"
+              className="text-body bg-surface-2 border-separator text-label placeholder:text-label-3 min-h-11 w-full rounded-md border px-3 outline-offset-2"
             />
           </div>
           <div>
@@ -353,7 +399,7 @@ export function LogViewingSheet({
               value={state.company}
               onChange={(event) => update("company", event.target.value)}
               placeholder={copy.logViewing.companyPlaceholder}
-              className="text-body bg-surface-2 border-separator text-label placeholder:text-label-3 focus-visible:outline-accent min-h-11 w-full rounded-md border px-3 outline-offset-2"
+              className="text-body bg-surface-2 border-separator text-label placeholder:text-label-3 min-h-11 w-full rounded-md border px-3 outline-offset-2"
             />
           </div>
         </div>
@@ -416,7 +462,7 @@ function SentencePart({
     <button
       type="button"
       onClick={onFocusField}
-      className="decoration-warm focus-visible:outline-accent rounded-xs underline decoration-2 underline-offset-[6px] outline-offset-2"
+      className="decoration-warm rounded-xs underline decoration-2 underline-offset-[6px] outline-offset-2"
     >
       {children}
     </button>

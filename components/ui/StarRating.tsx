@@ -46,7 +46,7 @@ export function StarRating({ value, onChange, "aria-label": ariaLabel }: StarRat
       aria-valuenow={current}
       aria-valuetext={value ? `${value} of 10` : "Unrated"}
       onKeyDown={handleKeyDown}
-      className="focus-visible:outline-accent inline-flex rounded-sm outline-offset-4"
+      className="inline-flex rounded-sm outline-offset-4"
     >
       {[1, 2, 3, 4, 5].map((starIndex) => (
         <button

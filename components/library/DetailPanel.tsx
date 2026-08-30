@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { SidePanel } from "@/components/ui/SidePanel";
 import { Stars } from "@/components/ui/Stars";
 import { ViewingHistory } from "@/components/film/ViewingHistory";
@@ -168,6 +169,27 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
           </span>
         </StatCard>
       </dl>
+
+      {/* Genre drives a top-level library filter but never appeared on
+          the title itself, so after filtering to Drama there was no way
+          to see that a title *is* Drama without leaving the panel.
+          They're links rather than chips because ?genre= is exactly the
+          param the library already parses — the panel's own filter, from
+          the other direction. */}
+      {detail !== null && detail.genres.length > 0 && (
+        <div className="flex flex-wrap gap-2 px-6 pt-6">
+          {detail.genres.map((genre) => (
+            <Link
+              key={genre}
+              href={`/library?genre=${encodeURIComponent(genre)}`}
+              onClick={onClose}
+              className="text-footnote text-label-2 border-separator bg-surface-2 hover:border-separator-strong hover:text-label inline-flex min-h-8 items-center rounded-full border px-3 font-bold outline-offset-2 transition-colors duration-(--t-hover)"
+            >
+              {genre}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="px-6 pt-8 pb-8">
         {entries === null ? (

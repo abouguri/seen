@@ -70,7 +70,7 @@ export function TagInput({ value, onChange, suggestions = [] }: TagInputProps) {
           onBlur={() => commit(draft)}
           placeholder={value.length === 0 ? copy.logViewing.tagsPlaceholder : ""}
           aria-label={copy.logViewing.tagsLabel}
-          className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 min-w-[8rem] flex-1 rounded-md px-3 outline-none"
+          className="text-body bg-surface-2 text-label placeholder:text-label-3 min-h-11 min-w-[8rem] flex-1 rounded-md px-3 outline-offset-2"
         />
         <datalist id={listId}>
           {suggestions.map((tag) => (

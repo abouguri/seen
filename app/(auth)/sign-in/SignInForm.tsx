@@ -5,13 +5,11 @@ import type { AuthError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { copy } from "@/lib/copy";
 import { Button } from "@/components/ui/Button";
-import { SeenLockup } from "@/components/shell/SeenMark";
 
 /**
  * Presentation only — the auth call below is byte-for-byte the one that
  * was here before (signInWithOtp, same emailRedirectTo, same callback
- * route). What changed around it is the failure handling and the page it
- * sits on.
+ * route). What changed around it is the surface it sits on.
  */
 
 type Failure = "email" | "rate-limited" | "offline" | "server" | "callback";
@@ -60,6 +58,9 @@ export function SignInForm({ hadCallbackError }: { hadCallbackError: boolean }) 
   const [failure, setFailure] = useState<Failure | null>(
     hadCallbackError ? "callback" : null,
   );
+  /** Frozen at submit. Rendering `email` in the confirmation would let
+   *  the address change under the message if state is ever reused. */
+  const [sentTo, setSentTo] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,6 +82,7 @@ export function SignInForm({ hadCallbackError }: { hadCallbackError: boolean }) 
         setStatus("idle");
         return;
       }
+      setSentTo(email);
       setStatus("sent");
     } catch (thrown) {
       setFailure(classify(thrown));
@@ -88,93 +90,117 @@ export function SignInForm({ hadCallbackError }: { hadCallbackError: boolean }) 
     }
   }
 
+  if (status === "sent") {
+    return (
+      /* The confirmation replaces the form rather than sitting above it:
+         the only thing left to do is go and read an email. It rises in,
+         because it arrives after a wait and a hard swap reads as the
+         page having reloaded. */
+      <div className="animate-[seen-rise_260ms_cubic-bezier(.4,0,.2,1)_both]">
+        <p className="text-eyebrow text-warm-text">{copy.signIn.sentEyebrow}</p>
+        <h1 className="text-display-1 mt-3.5 text-balance">{copy.signIn.sentTitle}</h1>
+        <p className="text-body text-label-2 mt-5 max-w-[40ch] leading-6 text-pretty">
+          {copy.signIn.sentPrefix}{" "}
+          <span className="text-label font-bold">{sentTo}</span>.
+        </p>
+        <p className="text-footnote text-label-3 mt-2.5">{copy.signIn.sentHint}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            setStatus("idle");
+            setFailure(null);
+            setEmail("");
+          }}
+          className="mt-7"
+        >
+          {copy.signIn.resend}
+        </Button>
+      </div>
+    );
+  }
+
+  const sending = status === "sending";
+
   return (
-    <div className="w-full max-w-[380px]">
-      <SeenLockup size={28} />
+    <div>
+      <p className="text-eyebrow text-label-3">{copy.signIn.eyebrow}</p>
 
-      {status === "sent" ? (
-        <>
-          {/* The confirmation replaces the form rather than sitting above
-              it: the only thing left to do is go and read an email. */}
-          <h1 className="text-display-2 mt-7 mb-3">Check your email</h1>
-          <p className="text-body text-label-2">
-            {copy.signIn.sentPrefix}{" "}
-            <span className="text-label font-bold">{email}</span>.
-          </p>
-          <p className="text-footnote text-label-3 mt-2">{copy.signIn.sentHint}</p>
-          <button
-            type="button"
-            onClick={() => {
-              setStatus("idle");
-              setFailure(null);
-            }}
-            className="text-subhead text-accent-text focus-visible:outline-accent mt-6 rounded-xs font-bold outline-offset-2"
-          >
-            {copy.signIn.resend}
-          </button>
-        </>
-      ) : (
-        <>
-          {/* 28px below the lockup, per the brief — mt-7. */}
-          <h1
-            className="mt-7 font-bold text-balance"
-            style={{
-              fontSize: "var(--fs-large-title)",
-              lineHeight: "var(--lh-large-title)",
-              letterSpacing: "var(--ls-large-title)",
-            }}
-          >
-            {copy.signIn.headline}
-          </h1>
-          <p className="text-body text-label-2 mt-4 text-pretty">{copy.signIn.sub}</p>
+      {/* The break is the design's, not the browser's — the second line
+          is the one that turns, and it takes the accent. */}
+      <h1 className="text-display-1 mt-3.5 text-balance">
+        {copy.signIn.headlineLead}
+        <br />
+        <span className="text-accent-text">{copy.signIn.headlineAccent}</span>
+      </h1>
 
-          <form onSubmit={handleSubmit} noValidate className="mt-8">
-            <label htmlFor="email" className="text-footnote text-label-2 mb-2 block">
-              {copy.signIn.emailLabel}
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder={copy.signIn.emailPlaceholder}
-              aria-invalid={failure === "email"}
-              aria-describedby={failure ? "sign-in-error" : undefined}
-              /* No outline-none here. It was on this input before and it
-                 silently cost the field its focus ring: outline-none sets
-                 outline-style to none from the utilities layer, and the
-                 focus-visible:outline-accent beside it only sets a
-                 colour — so the global :focus-visible rule in globals.css
-                 had its style overridden and drew nothing. Measured at
-                 2px none rather than 2px solid. Dropping it lets the
-                 global rule land. */
-              className="text-body border-separator bg-surface-1 text-label placeholder:text-label-3 focus-visible:outline-accent min-h-11 w-full rounded-md border px-4 outline-offset-2"
+      <p className="text-body text-label-2 mt-5.5 max-w-[40ch] leading-6 text-pretty">
+        {copy.signIn.sub}
+      </p>
+
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="mt-[clamp(28px,4vh,40px)] flex max-w-115 flex-col gap-3.5"
+      >
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="text-footnote text-label-2 font-semibold">
+            {copy.signIn.emailLabel}
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="off"
+            spellCheck={false}
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            disabled={sending}
+            placeholder={copy.signIn.emailPlaceholder}
+            aria-invalid={failure !== null}
+            aria-describedby={failure ? "sign-in-error" : undefined}
+            /* auth-input replaces the global focus ring with a border
+               move and a 4px glow — the field already has an edge, and
+               an outline outside it reads as two borders. That class is
+               the only place in the app allowed to say outline: none,
+               and it draws the replacement in the same block. */
+            className="auth-input text-body text-label placeholder:text-label-3 min-h-13 w-full rounded-md px-4"
+          />
+        </div>
+
+        {/* Rendered whether or not there's a failure, and hidden with a
+            class: role="alert" on a node that mounts with its message
+            already in it is announced inconsistently across screen
+            readers, where a live region that was already present when
+            the text arrives is not. */}
+        <p
+          id="sign-in-error"
+          role="alert"
+          aria-live="polite"
+          className={`text-footnote text-danger ${failure ? "" : "hidden"}`}
+        >
+          {failure ? FAILURE_COPY[failure] : ""}
+        </p>
+
+        <Button
+          type="submit"
+          disabled={sending}
+          className="mt-1.5 min-h-13 w-full disabled:cursor-progress disabled:opacity-55"
+        >
+          {sending && (
+            <span
+              aria-hidden="true"
+              className="size-4 animate-[seen-spin_700ms_linear_infinite] rounded-full border-2 border-white/35 border-t-white"
             />
+          )}
+          <span>{sending ? copy.signIn.sending : copy.signIn.submit}</span>
+        </Button>
 
-            {failure && (
-              /* aria-live so the message is announced when it replaces a
-                 previous one — the text changes but the node doesn't, so
-                 without it a screen reader can miss the swap. */
-              <p
-                id="sign-in-error"
-                role="alert"
-                aria-live="polite"
-                className="text-footnote text-danger mt-3"
-              >
-                {FAILURE_COPY[failure]}
-              </p>
-            )}
-
-            <Button type="submit" disabled={status === "sending"} className="mt-5 w-full">
-              {status === "sending" ? copy.signIn.sending : copy.signIn.submit}
-            </Button>
-          </form>
-        </>
-      )}
+        <p className="text-footnote text-label-3 mt-0.5 text-pretty">{copy.signIn.formHint}</p>
+      </form>
     </div>
   );
 }

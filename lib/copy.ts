@@ -29,15 +29,32 @@ export const copy = {
     // has to survive edits: it defines the product against every other
     // film app in a sentence, which is the whole reason a stranger
     // should read past the headline.
-    headline: "You've seen more than you remember.",
+    eyebrow: "A private film archive",
+    // Split across two lines because the second one takes the accent, and
+    // the break is the design's, not the browser's — "You've seen more /
+    // than you remember" is the joke, and letting it wrap wherever the
+    // measure happens to fall loses it.
+    headlineLead: "You've seen more",
+    headlineAccent: "than you remember.",
     sub: `${APP_NAME} is a private record of the films you've watched — not a queue of things you haven't.`,
     emailLabel: "Email",
     emailPlaceholder: "you@example.com",
     submit: "Send magic link",
     sending: "Sending link…",
-    sentPrefix: "Check your email — we sent a sign-in link to",
+    // Under the button, before anything has gone wrong: says what is
+    // about to happen, so an inbox with no password in it isn't a
+    // surprise. The "expires in an hour" half is repeated in sentHint
+    // deliberately — by then it's the only thing that still matters.
+    formHint: "No password to remember. We email a link that works once and expires in an hour.",
+    sentEyebrow: "Link sent",
+    sentTitle: "Check your email.",
+    sentPrefix: "We sent a sign-in link to",
     sentHint: "The link works once and expires in an hour.",
     resend: "Use a different email",
+    // The footer. Two claims, and both are load-bearing on the one page
+    // where a stranger decides whether to hand over an email address.
+    footerPrivate: "Your archive is private by default.",
+    footerShared: "Nothing is shared, ever.",
     errorCallback: "That link didn't work — it may have expired or already been used. Request a new one below.",
     // One message per thing that can actually go wrong, each naming the
     // cause and the next move. There is deliberately no generic

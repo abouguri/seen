@@ -103,11 +103,46 @@
      measures the same 1.7:1 as a dark thumb on paper at 24%, so light
      mode carries slightly more. Same asymmetry, same reason, as
      --pattern-alpha above. */
-  /* How much accent goes into the sign-in tile field's filled state.
-     Per-mode for the same reason --pattern-alpha is: the same mix reads
-     fainter as a dark tint on paper than as a light one on the near-black
-     ground, and at 20% the light-mode field all but vanished. */
-  --tile-mix: 20%;
+  /* Sign-in composition.
+     The page a stranger meets is the one screen with no content of its
+     own to look at, so it carries its own atmosphere: a ledger grid, two
+     radial washes, the mark blown up into three floating cards, and film
+     grain over the lot. All of it is scoped to that page — nothing else
+     reads these — but the values live here so the page re-tints in light
+     mode from the same place as everything else.
+
+     The cards are the SeenMark's own geometry at 15x scale. At that size
+     the mark's flat fills would be three enormous blocks of colour, so
+     they become translucent panels with a hairline edge: the same shape,
+     dropped to the weight of a background. */
+  --ledger: rgba(204, 184, 251, 0.1);
+  --wash-cool: #ccb8fb;
+  --wash-alpha: 9%;
+  --grain-cool: #ccb8fb;
+  --grain-warm: #fe9e47;
+  --grain-alpha: 9%;
+  --card-back: rgba(254, 158, 71, 0.07);
+  --card-back-line: rgba(254, 158, 71, 0.42);
+  --card-mid: rgba(204, 184, 251, 0.06);
+  --card-mid-line: rgba(204, 184, 251, 0.4);
+  --card-front: rgba(84, 54, 206, 0.24);
+  --card-front-line: rgba(110, 81, 232, 0.68);
+  --card-shadow: 0 70px 160px -50px rgba(84, 54, 206, 0.18);
+  --dot-fill: rgba(204, 184, 251, 0.14);
+  --dot-ring: rgba(204, 184, 251, 0.42);
+  /* The email field's own focus and error rings — a 4px glow rather than
+     the global 2px outline, because the input already has a border to
+     move and a bare outline outside it reads as two rings. */
+  --accent-line: rgba(110, 81, 232, 0.7);
+  --danger-glow: rgba(255, 95, 87, 0.16);
+
+  /* The focus ring, app-wide. Deliberately not --accent: a 2px #5436ce
+     hairline measures 2.63:1 on the near-black ground, which is under
+     the 3:1 a non-text indicator needs and reads as no ring at all on a
+     dark screen. The lilac is 11.12:1 there. Light mode is unaffected —
+     --accent-text resolves to the same #5436ce the ring already used, at
+     6.57:1 on paper. */
+  --focus-ring: var(--accent-text);
 
   --scrollbar-size: 12px;
   --scrollbar-thumb-inset: 3px;
@@ -277,11 +312,35 @@
        lilac, and the violet has to be pushed further before it separates
        from the hover state. The token names and the geometry are
        unchanged; only the weights move. */
-    --tile-mix: 25%;
-
     --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
     --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
     --scrollbar-thumb-active: color-mix(in srgb, var(--accent-text) 72%, transparent);
+
+    /* Sign-in, on paper. Two things invert rather than just re-tint.
+       The cards go opaque: translucent panels over a light ground lose
+       the edge that makes them read as three overlapping cards, so light
+       mode gets flat tints and drops the shadow entirely. And both
+       washes go warm — a cool wash on a warm paper ground reads as a
+       grey stain rather than as light. */
+    --ledger: rgba(84, 54, 206, 0.13);
+    --wash-cool: #e8791e;
+    --wash-alpha: 9%;
+    /* Grain inverts too: light specks on paper are invisible, so these
+       are the ground's own shadow tones, and a touch weaker. */
+    --grain-cool: #4a3f52;
+    --grain-warm: #8a6a45;
+    --grain-alpha: 7%;
+    --card-back: #f8dcbc;
+    --card-back-line: #e0ac77;
+    --card-mid: #e8dffb;
+    --card-mid-line: #cdbcf3;
+    --card-front: #d3c5f3;
+    --card-front-line: #a892ea;
+    --card-shadow: none;
+    --dot-fill: #ffffff;
+    --dot-ring: rgba(84, 54, 206, 0.22);
+    --accent-line: rgba(84, 54, 206, 0.62);
+    --danger-glow: rgba(196, 50, 42, 0.14);
   }
 }
 
@@ -315,7 +374,25 @@
   --scrim: #1e1814;
   --pattern-alpha: 11%;
 
-  --tile-mix: 25%;
+  /* Sign-in — see the prefers-color-scheme block above for why the cards
+     go opaque and the washes go warm on paper. */
+  --ledger: rgba(84, 54, 206, 0.13);
+  --wash-cool: #e8791e;
+  --wash-alpha: 9%;
+  --grain-cool: #4a3f52;
+  --grain-warm: #8a6a45;
+  --grain-alpha: 7%;
+  --card-back: #f8dcbc;
+  --card-back-line: #e0ac77;
+  --card-mid: #e8dffb;
+  --card-mid-line: #cdbcf3;
+  --card-front: #d3c5f3;
+  --card-front-line: #a892ea;
+  --card-shadow: none;
+  --dot-fill: #ffffff;
+  --dot-ring: rgba(84, 54, 206, 0.22);
+  --accent-line: rgba(84, 54, 206, 0.62);
+  --danger-glow: rgba(196, 50, 42, 0.14);
 
   --scrollbar-thumb: color-mix(in srgb, var(--label) 24%, transparent);
   --scrollbar-thumb-hover: color-mix(in srgb, var(--label) 40%, transparent);
@@ -380,9 +457,12 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Visible focus rings everywhere — never outline: none without this. */
+  /* Visible focus rings everywhere — never outline: none without this.
+     The colour is --focus-ring, not --accent: see the token for the
+     measurement. Dark mode gains a ring it effectively didn't have;
+     light mode is byte-identical to what this drew before. */
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
 
@@ -812,59 +892,264 @@
   }
 
   /* ==========================================================================
-     Sign-in tile field
-     An ambient grid of empty 2:3 tiles that fill in one at a time, in a
-     random order, looping slowly — an archive assembling itself. It's the
-     product's own metaphor rather than decoration, and it carries no
-     posters: no image rights, no payload, nothing to load.
+     Sign-in composition
+     The mark blown up to fill the right half of the page: the same three
+     cards, at the same angles, drifting slowly out of and back into
+     alignment. It never resolves into the logo and it never leaves it —
+     the stack is always legible as the stack.
 
-     Pure CSS on purpose. The only JS is a visibilitychange listener that
-     flips one attribute; the stagger is inline custom properties, which
-     is what keeps the whole thing under a couple of hundred bytes of
-     script instead of an animation library.
+     Three separate animations rather than one on a wrapper. A shared
+     transform would move the cards as a rigid group, which reads as a
+     panning photograph; independent periods (14s / 18s / 21s) that share
+     no common multiple inside a reasonable session mean the arrangement
+     never visibly repeats.
 
-     Both colours are tokens, so the field re-tints in light mode with
-     everything else: tiles rest at --surface-2 (a step off the ground,
-     barely) and fill to the accent mixed into that same surface, which
-     is the "soft muted violet-grey" the field wants. Deliberately a
-     small step — this is texture, and the form has to win.
+     Negative delays start each card mid-path, so the composition is
+     already in motion on first paint instead of beginning from the
+     assembled logo and drifting apart.
      ========================================================================== */
-  .tile-field-tile {
-    background-color: var(--surface-2);
-    animation: seen-tile-fill var(--tile-cycle, 72s) linear var(--tile-delay, 0s) infinite;
-  }
-
-  /* Paused while the tab is hidden — a background tab repainting a grid
-     of 30-odd tiles forever is pure battery cost for something nobody is
-     looking at. One attribute on the container stops every tile. */
-  [data-tiles-paused="true"] .tile-field-tile {
-    animation-play-state: paused;
-  }
-
-  @keyframes seen-tile-fill {
-    /* Fill early and hold long: at any moment most of the field is
-       filled and a few tiles are mid-change, which reads as accumulation
-       rather than as a grid blinking. */
+  @keyframes seen-float-back {
     0%,
     100% {
-      background-color: var(--surface-2);
+      transform: rotate(-14deg) translate3d(0, 0, 0) scale(1);
     }
-    5%,
-    72% {
-      background-color: color-mix(in srgb, var(--accent) var(--tile-mix), var(--surface-2));
+    33% {
+      transform: rotate(-19.5deg) translate3d(-34px, -52px, 0) scale(1.035);
     }
-    82% {
-      background-color: var(--surface-2);
+    66% {
+      transform: rotate(-9.5deg) translate3d(22px, 38px, 0) scale(0.975);
+    }
+  }
+  @keyframes seen-float-mid {
+    0%,
+    100% {
+      transform: rotate(-6deg) translate3d(0, 0, 0) scale(1);
+    }
+    30% {
+      transform: rotate(-1.2deg) translate3d(40px, 44px, 0) scale(1.04);
+    }
+    70% {
+      transform: rotate(-10.5deg) translate3d(-26px, -46px, 0) scale(0.97);
+    }
+  }
+  @keyframes seen-float-front {
+    0%,
+    100% {
+      transform: rotate(5deg) translate3d(0, 0, 0) scale(1);
+    }
+    38% {
+      transform: rotate(10.5deg) translate3d(-30px, -60px, 0) scale(1.045);
+    }
+    74% {
+      transform: rotate(1deg) translate3d(28px, 40px, 0) scale(0.968);
     }
   }
 
-  /* Reduced motion renders the end state — the assembled archive — and
-     never animates. Not a dimmed or paused version: the field's whole
-     job is to have filled in, and that is what a still frame of it is. */
+  /* Geometry lives here rather than inline so the breakpoints below can
+     override it in the ordinary way. Inline styles beat any stylesheet
+     rule short of !important, and a composition that needs !important to
+     reach its own phone layout is one edit away from being unfixable. */
+  .auth-cluster {
+    position: absolute;
+    top: 50%;
+    /* Overhangs the viewport edge: the stack is a crop of something
+       larger, not an illustration placed on the page. */
+    right: -2vw;
+    transform: translateY(-50%);
+    width: min(600px, 44vw);
+    min-width: 400px;
+    aspect-ratio: 1 / 1;
+    opacity: var(--cluster-opacity, 1);
+  }
+
+  .auth-card {
+    position: absolute;
+    border-width: 1.5px;
+    border-style: solid;
+    will-change: transform;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    animation-iteration-count: infinite;
+  }
+  .auth-card-back {
+    left: 0;
+    top: 12%;
+    width: 56%;
+    height: 72%;
+    transform: rotate(-14deg);
+    border-radius: 38px;
+    background: var(--card-back);
+    border-color: var(--card-back-line);
+    animation-name: seen-float-back;
+    animation-duration: 14s;
+    animation-delay: -2s;
+  }
+  .auth-card-mid {
+    left: 16%;
+    top: 8%;
+    width: 56%;
+    height: 76%;
+    transform: rotate(-6deg);
+    border-radius: 38px;
+    background: var(--card-mid);
+    border-color: var(--card-mid-line);
+    animation-name: seen-float-mid;
+    animation-duration: 18s;
+    animation-delay: -7s;
+  }
+  .auth-card-front {
+    left: 34%;
+    top: 10%;
+    width: 60%;
+    height: 78%;
+    transform: rotate(5deg);
+    border-radius: 42px;
+    background: var(--card-front);
+    border-color: var(--card-front-line);
+    box-shadow: var(--card-shadow);
+    animation-name: seen-float-front;
+    animation-duration: 21s;
+    animation-delay: -4s;
+  }
+  /* The mark's one dot, at the mark's own proportions. */
+  .auth-card-dot {
+    position: absolute;
+    right: 17%;
+    top: 13%;
+    width: 17%;
+    aspect-ratio: 1 / 1;
+    border-radius: 9999px;
+    background: var(--dot-fill);
+    border: 2px solid var(--dot-ring);
+  }
+
+  /* A wash of the page ground over everything behind it, opaque on the
+     left and clearing to nothing on the right — so the composition is
+     fully visible where there is no type and recedes to almost nothing
+     under the column. This is what keeps the headline at full contrast
+     over a background that is otherwise busy. */
+  .auth-veil {
+    background-image:
+      radial-gradient(
+        150% 105% at 2% 50%,
+        var(--bg) 0%,
+        var(--bg) var(--veil-solid, 30%),
+        transparent 74%
+      ),
+      linear-gradient(
+        to right,
+        var(--bg) 0%,
+        color-mix(in srgb, var(--bg) 62%, transparent) 30%,
+        transparent 58%
+      );
+  }
+
+  /* Reduced motion holds the assembled mark. Not a paused frame of the
+     drift — the cards land on the logo's own angles, which is the one
+     arrangement that is deliberate rather than incidental. */
   @media (prefers-reduced-motion: reduce) {
-    .tile-field-tile {
-      animation: none;
-      background-color: color-mix(in srgb, var(--accent) var(--tile-mix), var(--surface-2));
+    .auth-card {
+      animation: none !important;
+    }
+    .auth-card-back {
+      transform: rotate(-14deg) !important;
+    }
+    .auth-card-mid {
+      transform: rotate(-6deg) !important;
+    }
+    .auth-card-front {
+      transform: rotate(5deg) !important;
+    }
+  }
+
+  /* The cluster is cropped to a corner mark below the split point, where
+     there's no room beside the column for it to sit. It also drops back
+     in opacity: over the narrow layout the type crosses it. */
+  @media (max-width: 900px) {
+    .auth-cluster {
+      top: 0;
+      right: -30%;
+      width: 90%;
+      min-width: 0;
+      transform: translateY(-14%);
+      --cluster-opacity: 0.5;
+    }
+    /* And the veil goes further before it clears, for the same reason. */
+    .auth-veil {
+      --veil-solid: 52%;
+    }
+  }
+  @media (max-width: 560px) {
+    .auth-cluster {
+      right: -38%;
+      width: 108%;
+      --cluster-opacity: 0.38;
+    }
+  }
+
+  /* The email field. Its states are a moving border plus a 4px glow
+     rather than the global outline: the input already has an edge, and a
+     ring outside it reads as two borders. Hence the one deliberate
+     outline: none in the app — the replacement is drawn here, in both
+     directions, which is exactly what the utility that used to sit on
+     this input failed to do. */
+  .auth-input {
+    background: var(--surface-2);
+    border: 1px solid var(--separator);
+    box-shadow: none;
+    transition:
+      border-color var(--t-hover),
+      box-shadow var(--t-hover),
+      background-color var(--t-hover);
+  }
+  .auth-input:hover:not(:focus):not([aria-invalid="true"]) {
+    border-color: var(--separator-strong);
+  }
+  .auth-input:focus {
+    background: var(--surface-1);
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 4px var(--accent-dim);
+  }
+  .auth-input:focus-visible {
+    outline: none;
+  }
+  .auth-input[aria-invalid="true"],
+  .auth-input[aria-invalid="true"]:focus {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px var(--danger-glow);
+  }
+  .auth-input[aria-invalid="true"]:focus {
+    background: var(--surface-1);
+  }
+  .auth-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* Chrome paints autofilled inputs a fixed yellow that ignores
+     background-color. The inset shadow is the standard way to cover it;
+     the 9999s transition is what stops it flashing through on load. */
+  .auth-input:-webkit-autofill,
+  .auth-input:-webkit-autofill:hover,
+  .auth-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--label);
+    -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset;
+    caret-color: var(--label);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--separator));
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  @keyframes seen-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes seen-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
 

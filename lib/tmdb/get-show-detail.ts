@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchTmdbShowDetail, TmdbNotFoundError } from "@/lib/tmdb/client";
 import { isStale, hasFullDetail } from "@/lib/tmdb/cache";
+import { hasSeasonRows, upsertSeasonSummaries } from "@/lib/tmdb/episode-cache";
 import {
   getCachedShow,
   mapRowToShowDetail,
@@ -19,7 +20,9 @@ export type ShowDetailResult =
 async function refreshInBackground(id: number) {
   try {
     const detail = await fetchTmdbShowDetail(id);
-    await upsertShowDetail(createAdminClient(), detail);
+    const admin = createAdminClient();
+    await upsertShowDetail(admin, detail);
+    await upsertSeasonSummaries(admin, id, detail.seasons ?? []);
   } catch {
     // Best-effort — a later request will retry the same stale path.
   }
@@ -31,12 +34,17 @@ async function refreshInBackground(id: number) {
  * isStale/hasFullDetail are reused as-is from lib/tmdb/cache.ts: both
  * are already generic over {synced_at}/{enriched_at}, nothing film-
  * specific about them.
+ *
+ * Also backfills seasons: a show cached before episode tracking shipped
+ * has no season rows yet, which the general isStale check alone wouldn't
+ * catch for up to 30 days — hasSeasonRows makes that a same-request-class
+ * (next visit) fix instead.
  */
 export async function getShowDetail(id: number): Promise<ShowDetailResult> {
   const cached = await getCachedShow(id);
 
   if (cached) {
-    if (!hasFullDetail(cached) || isStale(cached.synced_at)) {
+    if (!hasFullDetail(cached) || isStale(cached.synced_at) || !(await hasSeasonRows(id))) {
       after(() => refreshInBackground(id));
     }
     return { status: "ok", show: mapRowToShowDetail(cached) };
@@ -44,7 +52,9 @@ export async function getShowDetail(id: number): Promise<ShowDetailResult> {
 
   try {
     const detail = await fetchTmdbShowDetail(id);
-    await upsertShowDetail(createAdminClient(), detail);
+    const admin = createAdminClient();
+    await upsertShowDetail(admin, detail);
+    await upsertSeasonSummaries(admin, id, detail.seasons ?? []);
     return { status: "ok", show: mapTmdbDetailToShowDetail(detail) };
   } catch (err) {
     if (err instanceof TmdbNotFoundError) return { status: "not_found" };

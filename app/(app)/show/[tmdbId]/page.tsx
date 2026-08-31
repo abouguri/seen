@@ -4,7 +4,8 @@ import { getShowDetail } from "@/lib/tmdb/get-show-detail";
 import { posterUrl, backdropUrl } from "@/lib/images";
 import { copy } from "@/lib/copy";
 import { ShowViewingHistory } from "@/components/show/ShowViewingHistory";
-import type { ShowWatchEntry } from "@/lib/types";
+import { SeasonChecklist } from "@/components/show/SeasonChecklist";
+import type { EpisodeWatchEntry, SeasonSummary, ShowWatchEntry } from "@/lib/types";
 
 /** Mirrors app/(app)/film/[tmdbId]/page.tsx — creators/status instead of
  *  directors/runtime (a show has no single runtime at this granularity). */
@@ -40,6 +41,43 @@ export default async function ShowDetailPage({
   const entries: ShowWatchEntry[] = (entryRows ?? []).map((row) => ({
     id: row.id,
     showId: row.show_id,
+    watchedOn: row.watched_on,
+    precision: row.precision,
+    eraLabel: row.era_label,
+    rating: row.rating,
+    note: row.note,
+    place: row.place,
+    company: row.company,
+    createdAt: row.created_at,
+  }));
+
+  const { data: seasonRows } = await supabase
+    .from("seasons")
+    .select("id, show_id, season_number, name, episode_count, poster_path")
+    .eq("show_id", id)
+    .order("season_number", { ascending: true });
+
+  const seasons: SeasonSummary[] = (seasonRows ?? []).map((row) => ({
+    id: row.id,
+    showId: row.show_id,
+    seasonNumber: row.season_number,
+    name: row.name,
+    episodeCount: row.episode_count,
+    posterPath: row.poster_path,
+  }));
+
+  const { data: episodeEntryRows } = await supabase
+    .from("episode_watch_entries")
+    .select(
+      "id, show_id, season_number, episode_id, watched_on, precision, era_label, rating, note, place, company, created_at",
+    )
+    .eq("show_id", id);
+
+  const episodeEntries: EpisodeWatchEntry[] = (episodeEntryRows ?? []).map((row) => ({
+    id: row.id,
+    showId: row.show_id,
+    seasonNumber: row.season_number,
+    episodeId: row.episode_id,
     watchedOn: row.watched_on,
     precision: row.precision,
     eraLabel: row.era_label,
@@ -104,6 +142,8 @@ export default async function ShowDetailPage({
 
       <div className="mt-6 px-4 md:px-9">
         <ShowViewingHistory showId={detail.id} initialEntries={entries} />
+
+        <SeasonChecklist showId={detail.id} initialSeasons={seasons} initialEntries={episodeEntries} />
 
         {detail.overview && (
           <details className="border-separator mt-8 border-t pt-4">

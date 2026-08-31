@@ -7,6 +7,7 @@ import type {
   TmdbMovieDetail,
   TmdbSearchResponse,
   TmdbSearchResult,
+  TmdbSeasonDetail,
   TmdbTvDetail,
   TmdbTvSearchResponse,
   TmdbTvSearchResult,
@@ -169,6 +170,28 @@ export async function fetchTmdbShowDetail(id: number): Promise<TmdbTvDetail> {
   }
 
   return (await res.json()) as TmdbTvDetail;
+}
+
+/** No append_to_response needed — episodes are native to this endpoint. */
+export async function fetchTmdbSeasonDetail(
+  showId: number,
+  seasonNumber: number,
+): Promise<TmdbSeasonDetail> {
+  const url = `${TMDB_BASE}/tv/${showId}/season/${seasonNumber}`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+
+  if (res.status === 404) {
+    throw new TmdbNotFoundError(`TMDB season ${showId}/${seasonNumber} not found`);
+  }
+  if (!res.ok) {
+    throw new TmdbError(`TMDB season detail fetch failed with status ${res.status}`);
+  }
+
+  return (await res.json()) as TmdbSeasonDetail;
 }
 
 /* ---------------------------------------------------------------------

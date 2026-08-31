@@ -63,6 +63,56 @@ export type ShowDetail = {
   status: string | null;
 };
 
+/** One season's summary — always known once a show's detail is fetched,
+ *  since TMDB includes it natively in /tv/{id}. episodeCount is the
+ *  checklist's per-season denominator; the episodes themselves are a
+ *  separate, on-demand fetch (see SeasonDetail). */
+export type SeasonSummary = {
+  id: number;
+  showId: number;
+  seasonNumber: number;
+  name: string | null;
+  episodeCount: number | null;
+  posterPath: string | null;
+};
+
+export type EpisodeSummary = {
+  id: number;
+  seasonNumber: number;
+  episodeNumber: number;
+  name: string;
+  overview: string | null;
+  airDate: string | null;
+  stillPath: string | null;
+  runtimeMinutes: number | null;
+};
+
+/** A season's full episode list — fetched on-demand when a season is
+ *  expanded in the checklist, not up front (episode lists are large). */
+export type SeasonDetail = SeasonSummary & {
+  overview: string | null;
+  airDate: string | null;
+  episodes: EpisodeSummary[];
+};
+
+/** Episode-level viewing entry — the same fuzzy-date model as
+ *  WatchEntry/ShowWatchEntry, one row per episode marked seen. No tags,
+ *  same reasoning as ShowWatchEntry. */
+export type EpisodeWatchEntry = {
+  id: string;
+  showId: number;
+  seasonNumber: number;
+  episodeId: number;
+  watchedOn: string | null;
+  precision: WatchPrecision;
+  eraLabel: string | null;
+  rating: number | null;
+  note: string | null;
+  place: string | null;
+  company: string | null;
+  createdAt: string;
+};
+
 export type LibrarySort = "recent_added" | "recent_watched" | "release_year" | "rating" | "title";
 
 export type LibraryFilm = {

@@ -215,6 +215,22 @@ export const copy = {
     deleteViewing: "Delete viewing",
     deleteViewingConfirm: "Delete this viewing? This can't be undone.",
   },
+  episodes: {
+    /* SeasonChecklist — the season/episode tracking entry point on the
+       show detail page (§ ROADMAP.md #1). Deliberately separate from
+       copy.film: this is its own entry point, not a shared flow. */
+    heading: "Episodes",
+    seasonLabel: (n: number) => `Season ${n}`,
+    specialsLabel: "Specials",
+    progress: (seen: number, total: number) => `${seen} / ${total} episodes`,
+    notStarted: "Not started",
+    inProgress: "In progress",
+    completed: "Completed",
+    markSeen: "Mark episode seen",
+    markUnseen: "Mark episode unseen",
+    loadFailed: "Couldn't load this season. Check your connection and try again.",
+    toggleFailed: "Couldn't save that. Check your connection and try again.",
+  },
   logViewing: {
     title: "Log a viewing",
     editTitle: "Edit viewing",

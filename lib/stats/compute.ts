@@ -25,6 +25,21 @@ export type ShowEntryRow = {
   } | null;
 };
 
+export type EpisodeEntryRow = {
+  id: string;
+  show_id: number;
+  episode_id: number;
+  watched_on: string | null;
+  created_at: string;
+  shows: {
+    name: string;
+    first_air_year: number | null;
+  } | null;
+  episodes: {
+    runtime: number | null;
+  } | null;
+};
+
 // Both movie and show entries normalize down to this before aggregation —
 // keeps one code path instead of two near-identical ones, and (mediaType,
 // itemId) is the real key everywhere a film/show id is grouped: a bare
@@ -73,10 +88,32 @@ function normalizeShowEntries(entries: ShowEntryRow[]): NormalizedEntry[] {
       // separate credit type, deliberately not folded into the same
       // "most-seen directors" stat (§ TV support plan).
       directors: [],
-      // No single-viewing duration exists at show granularity without an
-      // episodes table — totalHours stays movie-only, a documented gap,
-      // not a bug.
+      // A show-level entry ("I watched this show") carries no per-viewing
+      // duration on its own — it's episode entries (below) that supply
+      // real runtime. The two are additive, never double-counted: this
+      // still always contributes 0.
       runtimeMinutes: null,
+    }));
+}
+
+// Normalizes into the existing "show" mediaType/itemId=show_id, not a new
+// third bucket: an episode watched is still "a viewing of that show,"
+// same title-granularity key everything else (longestGap, per-year
+// counts) already groups by — just now carrying real duration via
+// episodes.runtime. This is what closes the totalHours gap documented
+// above, without a second parallel set of per-episode stats.
+function normalizeEpisodeEntries(entries: EpisodeEntryRow[]): NormalizedEntry[] {
+  return entries
+    .filter((e) => e.shows !== null)
+    .map((e) => ({
+      mediaType: "show" as const,
+      itemId: e.show_id,
+      watchedOn: e.watched_on,
+      createdAt: e.created_at,
+      title: e.shows!.name,
+      year: e.shows!.first_air_year,
+      directors: [],
+      runtimeMinutes: e.episodes?.runtime ?? null,
     }));
 }
 
@@ -88,13 +125,21 @@ function normalizeShowEntries(entries: ShowEntryRow[]): NormalizedEntry[] {
  * enough (hundreds to a few thousand entries) that in-memory aggregation
  * beats standing up SQL group-bys or an RPC for six numbers.
  *
- * Takes movie and show entries separately (they come from two different
- * tables/queries) and normalizes both before aggregating, so every stat
- * below runs over one combined list instead of two parallel
+ * Takes movie, show, and episode entries separately (they come from three
+ * different tables/queries) and normalizes all three before aggregating,
+ * so every stat below runs over one combined list instead of parallel
  * near-duplicate implementations.
  */
-export function computeStats(movieEntries: MovieEntryRow[], showEntries: ShowEntryRow[] = []): Stats {
-  const entries = [...normalizeMovieEntries(movieEntries), ...normalizeShowEntries(showEntries)];
+export function computeStats(
+  movieEntries: MovieEntryRow[],
+  showEntries: ShowEntryRow[] = [],
+  episodeEntries: EpisodeEntryRow[] = [],
+): Stats {
+  const entries = [
+    ...normalizeMovieEntries(movieEntries),
+    ...normalizeShowEntries(showEntries),
+    ...normalizeEpisodeEntries(episodeEntries),
+  ];
 
   const yearCounts = new Map<number, number>();
   const decadeCounts = new Map<number, number>();

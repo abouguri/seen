@@ -65,6 +65,41 @@ export type TmdbTvDetail = {
   /** In the base /tv/{id} response natively — unlike a movie's directors,
    *  no append_to_response=credits fetch is needed for this. */
   created_by?: TmdbCreatedBy[];
+  /** Also native to /tv/{id} — per-season summaries (name, episode_count),
+   *  no episodes. The episodes themselves need a separate /season/{n}
+   *  fetch (see TmdbSeasonDetail) — but the season list itself is free. */
+  seasons?: TmdbSeasonSummary[];
+};
+
+export type TmdbSeasonSummary = {
+  id: number;
+  name: string;
+  season_number: number;
+  episode_count: number;
+  poster_path: string | null;
+  air_date?: string | null;
+};
+
+export type TmdbEpisode = {
+  id: number;
+  name: string;
+  overview?: string | null;
+  season_number: number;
+  episode_number: number;
+  air_date?: string | null;
+  runtime?: number | null;
+  still_path?: string | null;
+};
+
+/** Response shape from /tv/{id}/season/{n}. */
+export type TmdbSeasonDetail = {
+  id: number;
+  name?: string | null;
+  overview?: string | null;
+  season_number: number;
+  air_date?: string | null;
+  poster_path?: string | null;
+  episodes: TmdbEpisode[];
 };
 
 export type TmdbCrewMember = {

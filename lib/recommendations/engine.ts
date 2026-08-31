@@ -342,6 +342,7 @@ function buildDirectorShelves(profiles: DirectorProfile[], leadId: number | null
         kind: "complete-director" as const,
         title: `Complete ${profile.name}`,
         reason: `You've seen ${profile.seenInFilmography} of ${profile.name}'s ${profile.filmography.length}.`,
+        progress: { seen: profile.seenInFilmography, total: profile.filmography.length },
         items,
       };
     })
@@ -374,6 +375,7 @@ function buildActorShelves(profiles: ActorProfile[], leadId: number | null): She
         // headings alone ("Complete Christopher Nolan" / "Complete
         // Michael Caine") don't say which relationship is which.
         reason: `You've seen ${profile.seenInFilmography} of the ${profile.filmography.length} films ${profile.name} has appeared in.`,
+        progress: { seen: profile.seenInFilmography, total: profile.filmography.length },
         items,
       };
     })

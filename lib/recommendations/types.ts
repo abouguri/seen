@@ -43,6 +43,9 @@ export type Shelf = {
   title: string;
   /** The shelf-level because-line, shown under the heading. */
   reason: string;
+  /** Set only by the director/actor completion shelves — a real N of M,
+   *  already implied by the reason text, surfaced as a bar too. */
+  progress?: { seen: number; total: number };
   items: Recommendation[];
 };
 

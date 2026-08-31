@@ -4,6 +4,7 @@ import { LeadRecommendation } from "@/components/home/LeadRecommendation";
 import { RecommendationShelf } from "@/components/home/RecommendationShelf";
 import { OnThisDay } from "@/components/home/OnThisDay";
 import { RewatchRoulette } from "@/components/home/RewatchRoulette";
+import { BlindPick } from "@/components/home/BlindPick";
 import { loadArchive } from "@/lib/recommendations/archive";
 import { buildRecommendations, FOUR_STARS, THIN_ARCHIVE } from "@/lib/recommendations/engine";
 import { getOnThisDayEntries } from "@/lib/on-this-day";
@@ -15,8 +16,10 @@ import { copy } from "@/lib/copy";
  * catalogue.
  *
  * A server component start to finish: the TMDB token never leaves the
- * server, and the only interactive piece on the page (DismissButton)
- * is an island inside the lead.
+ * server. Interactivity lives in small islands — DismissButton on the
+ * lead, a DismissCardButton on every shelf card, and the roulette/blind
+ * pick triggers — each mounted with data this render already computed,
+ * never fetching anything of their own.
  *
  * Three states, and they are the point rather than edge cases. A
  * recommender that looks broken on day one is the usual way this feature
@@ -59,6 +62,20 @@ export default async function HomePage() {
       rating: film.rating!,
     }));
 
+  // Everything already vetted for this render — presentable, deduped,
+  // not logged or dismissed — flattened into one pool. No new filtering:
+  // if it's true enough to earn a reason line elsewhere on the page,
+  // it's true enough to be a blind pick.
+  const blindPickCandidates = [
+    ...(lead ? [lead] : []),
+    ...shelves.flatMap((shelf) => shelf.items),
+  ].map((item) => ({
+    id: item.id,
+    title: item.title,
+    year: item.year,
+    posterPath: item.posterPath,
+  }));
+
   const intro =
     libraryCount === 0
       ? copy.home.emptyBody
@@ -98,9 +115,14 @@ export default async function HomePage() {
               {intro}
             </p>
 
-            {rouletteCandidates.length > 0 && (
-              <div className="mt-6">
-                <RewatchRoulette candidates={rouletteCandidates} />
+            {(rouletteCandidates.length > 0 || blindPickCandidates.length > 0) && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {rouletteCandidates.length > 0 && (
+                  <RewatchRoulette candidates={rouletteCandidates} />
+                )}
+                {blindPickCandidates.length > 0 && (
+                  <BlindPick candidates={blindPickCandidates} />
+                )}
               </div>
             )}
           </header>

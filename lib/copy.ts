@@ -50,6 +50,15 @@ export const copy = {
     rouletteSheetTitle: "Rewatch roulette",
     rouletteShuffleAgain: "Shuffle again",
     rouletteViewAction: "View film",
+    // A different mode from the roulette above: that one is "give me
+    // something to rewatch," this is "surprise me from everything on
+    // the page right now" — no rating filter, and the pick stays hidden
+    // until asked for.
+    blindPickTrigger: "Blind pick",
+    blindPickSheetTitle: "Blind pick",
+    blindPickMysteryLabel: "Hidden pick",
+    blindPickReveal: "Reveal",
+    blindPickAgain: "Pick again",
   },
 
   notFound: {

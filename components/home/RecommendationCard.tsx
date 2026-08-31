@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PosterThumb } from "@/components/film/PosterThumb";
+import { DismissCardButton } from "@/components/home/DismissCardButton";
 import { copy } from "@/lib/copy";
 import type { Recommendation } from "@/lib/recommendations/types";
 
@@ -19,8 +20,8 @@ import type { Recommendation } from "@/lib/recommendations/types";
  */
 export function RecommendationCard({ film }: { film: Recommendation }) {
   return (
-    <li>
-      <Link href={`/film/${film.id}`} className="group block rounded-sm outline-offset-4">
+    <li className="group relative">
+      <Link href={`/film/${film.id}`} className="block rounded-sm outline-offset-4">
         <div className="relative transition-[translate,box-shadow] duration-(--t-card) ease-(--default-transition-timing-function) group-hover:-translate-y-1 group-hover:shadow-[0_14px_30px_-8px_rgba(0,0,0,.55)] group-focus-visible:-translate-y-1">
           <PosterThumb
             title={film.title}
@@ -43,6 +44,7 @@ export function RecommendationCard({ film }: { film: Recommendation }) {
         </p>
         <p className="text-caption text-label-2 mt-1 text-pretty">{film.reason}</p>
       </Link>
+      <DismissCardButton filmId={film.id} title={film.title} />
     </li>
   );
 }

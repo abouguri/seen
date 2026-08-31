@@ -25,6 +25,20 @@ export function RecommendationShelf({ shelf }: { shelf: Shelf }) {
       <h2 className="text-display-2 text-balance">{shelf.title}</h2>
       <p className="text-subhead text-label-2 mt-2 max-w-prose text-pretty">{shelf.reason}</p>
 
+      {shelf.progress && (
+        <div className="mt-3 flex max-w-56 items-center gap-2.5">
+          <div className="bg-surface-2 h-1 flex-1 overflow-hidden rounded-full">
+            <div
+              className="bg-accent h-full rounded-full"
+              style={{ width: `${Math.min(100, (shelf.progress.seen / shelf.progress.total) * 100)}%` }}
+            />
+          </div>
+          <span className="text-caption text-label-3 shrink-0 font-bold">
+            {shelf.progress.seen} / {shelf.progress.total}
+          </span>
+        </div>
+      )}
+
       <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {shelf.items.map((film) => (
           <RecommendationCard key={film.id} film={film} />

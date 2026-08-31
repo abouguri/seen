@@ -125,6 +125,14 @@ console.log("\n=== 30 films (full) ===");
           !genreShelf.items.some(i => i.id === 11));
   }
 
+  const directorShelf = r.shelves.find(s => s.kind === "complete-director");
+  check("director shelf exists", directorShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));
+  if (directorShelf) {
+    check("director shelf progress matches the reason text (5 of 7)",
+          directorShelf.progress?.seen === 5 && directorShelf.progress?.total === 7,
+          JSON.stringify(directorShelf.progress));
+  }
+
   const franchiseShelf = r.shelves.find(s => s.kind === "complete-franchise");
   check("franchise shelf exists", franchiseShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));
   if (franchiseShelf) {
@@ -146,6 +154,9 @@ console.log("\n=== 30 films (full) ===");
           actorShelf.title);
     check("actor shelf reason states seen/total", actorShelf.reason === "You've seen 2 of the 3 films Michael Caine has appeared in.",
           actorShelf.reason);
+    check("actor shelf progress matches the reason text (2 of 3)",
+          actorShelf.progress?.seen === 2 && actorShelf.progress?.total === 3,
+          JSON.stringify(actorShelf.progress));
     check("actor shelf's gap is the unlogged Caine film", actorShelf.items.some(i => i.id === 30),
           JSON.stringify(actorShelf.items.map(i => i.id)));
     check("actor shelf doesn't re-offer an already-logged Caine film",

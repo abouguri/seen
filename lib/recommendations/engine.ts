@@ -63,6 +63,14 @@ const MAX_DIRECTORS_ANALYSED = 6;
  *  round trips for every actor who appears twice. */
 const MAX_ACTORS_ANALYSED = 6;
 
+/** A completion shelf only makes sense against a filmography small enough
+ *  to actually complete. Nolan's 19 films qualifies; a prolific actor's
+ *  194 doesn't — "you've seen 6 of 194" isn't a goal, it's a statistic,
+ *  and it was reaching the real page before this existed. Applies to both
+ *  directors and actors, since a director credited on a large number of
+ *  shorts/TV movies has the same problem. */
+const MAX_FILMOGRAPHY_SIZE = 25;
+
 /** "Worth another look" only reaches back this far. */
 const REWATCH_YEARS = 3;
 
@@ -155,7 +163,7 @@ async function buildDirectorProfiles(archive: Archive): Promise<DirectorProfile[
         if (personId === null) return null;
 
         const filmography = (await fetchTmdbDirectedFilms(personId)).filter(isPresentable);
-        if (filmography.length === 0) return null;
+        if (filmography.length === 0 || filmography.length > MAX_FILMOGRAPHY_SIZE) return null;
 
         const gaps = filmography
           .filter(
@@ -214,7 +222,7 @@ async function buildActorProfiles(archive: Archive): Promise<ActorProfile[]> {
         if (personId === null) return null;
 
         const filmography = (await fetchTmdbActingFilms(personId)).filter(isPresentable);
-        if (filmography.length === 0) return null;
+        if (filmography.length === 0 || filmography.length > MAX_FILMOGRAPHY_SIZE) return null;
 
         const gaps = filmography
           .filter(

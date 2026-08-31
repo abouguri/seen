@@ -40,8 +40,8 @@ const thirty: ArchiveFilm[] = [
   mk({ id: 1, title: "Memento", year: 2000, directors: NOLAN, genres: DRAMA, rating: 9, lastWatchedOn: "2015-03-02" }),
   mk({ id: 2, title: "The Prestige", year: 2006, directors: NOLAN, castMembers: [{ id: null, name: "Michael Caine", profilePath: null }], genres: DRAMA, rating: 8 }),
   mk({ id: 3, title: "Inception", year: 2010, directors: NOLAN, castMembers: [{ id: null, name: "Michael Caine", profilePath: null }], genres: DRAMA, rating: 10, lastWatchedOn: "2024-01-01" }),
-  mk({ id: 4, title: "Interstellar", year: 2014, directors: NOLAN, genres: DRAMA, rating: 9 }),
-  mk({ id: 5, title: "Dunkirk", year: 2017, directors: NOLAN, genres: DRAMA, rating: 8 }),
+  mk({ id: 4, title: "Interstellar", year: 2014, directors: NOLAN, castMembers: [{ id: null, name: "Prolific Extra", profilePath: null }], genres: DRAMA, rating: 9 }),
+  mk({ id: 5, title: "Dunkirk", year: 2017, directors: NOLAN, castMembers: [{ id: null, name: "Prolific Extra", profilePath: null }], genres: DRAMA, rating: 8 }),
   mk({ id: 10, title: "Se7en", year: 1995, directors: FINCHER, genres: DRAMA, rating: 10, lastWatchedOn: "2016-05-05" }),
   mk({ id: 11, title: "Fight Club", year: 1999, directors: FINCHER, genres: DRAMA, rating: 9 }),
   mk({ id: 12, title: "Zodiac", year: 2007, directors: FINCHER, genres: DRAMA, rating: 8 }),
@@ -151,6 +151,9 @@ console.log("\n=== 30 films (full) ===");
     check("actor shelf doesn't re-offer an already-logged Caine film",
           !actorShelf.items.some(i => i.id === 2 || i.id === 3));
   }
+  check("MAX_FILMOGRAPHY_SIZE guardrail: no shelf for the 30-film prolific extra",
+        !r.shelves.some(s => s.title.includes("Prolific Extra")),
+        JSON.stringify(r.shelves.map(s => s.title)));
 
   const rw = r.shelves.find(s => s.kind === "rewatch");
   if (rw) {

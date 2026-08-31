@@ -4,6 +4,7 @@
 export const NOLAN_ID = 525;
 export const FINCHER_ID = 7467;
 export const CAINE_ID = 3151;
+export const PROLIFIC_ID = 5000;
 
 const f = (id: number, title: string, year: number, pop = 50) => ({
   id, title, release_date: `${year}-01-01`, poster_path: `/p${id}.jpg`, popularity: pop,
@@ -40,6 +41,14 @@ export const CAINE_FILMS = [
   f(3, "Inception", 2010),
   f(30, "The Cider House Rules", 1999, 60),
 ];
+
+// A "prolific extra" — seen in 2 archive films (a real candidate by
+// count), but with a 30-title filmography, over MAX_FILMOGRAPHY_SIZE
+// (25). Exercises the guardrail that keeps a Michael-Caine-194-films
+// situation off the page.
+export const PROLIFIC_FILMS = Array.from({ length: 30 }, (_, i) =>
+  f(6000 + i, `Prolific Film ${i}`, 1990 + i),
+);
 
 /** Recommendations for a seed — includes a logged film (3) and a
  *  dismissed one (14), which must both be filtered out. */
@@ -92,11 +101,14 @@ export function stubFetch() {
           { id: 8000, name: "Michael Caine", known_for_department: "Directing", popularity: 5 },
           { id: CAINE_ID, name: "Michael Caine", known_for_department: "Acting", popularity: 40 },
         ] });
+      if (q === "Prolific Extra")
+        return json({ results: [{ id: PROLIFIC_ID, name: "Prolific Extra", known_for_department: "Acting", popularity: 10 }] });
       return json({ results: [] });
     }
     if (url.includes(`/person/${NOLAN_ID}/movie_credits`)) return json({ crew: NOLAN_FILMS });
     if (url.includes(`/person/${FINCHER_ID}/movie_credits`)) return json({ crew: FINCHER_FILMS });
     if (url.includes(`/person/${CAINE_ID}/movie_credits`)) return json({ cast: CAINE_FILMS });
+    if (url.includes(`/person/${PROLIFIC_ID}/movie_credits`)) return json({ cast: PROLIFIC_FILMS });
     if (url.includes("/recommendations")) return json({ results: RECS });
     if (url.includes("/genre/movie/list")) return json({ genres: GENRE_MAP });
     if (url.includes(`/collection/${TOY_STORY_ID}`))

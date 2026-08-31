@@ -324,7 +324,18 @@ function LibraryContent() {
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
       )}
 
-      <DetailPanel item={openItem} onClose={() => setOpenItem(null)} />
+      <DetailPanel
+        item={openItem}
+        onClose={() => setOpenItem(null)}
+        onRemoved={(removed) => {
+          removeFilmFromList(removed.mediaType, removed.id);
+          setOpenItem(null);
+        }}
+        onRematched={() => {
+          setOpenItem(null);
+          reload();
+        }}
+      />
 
       {logItem && (
         <LogViewingSheet

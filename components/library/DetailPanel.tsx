@@ -15,6 +15,8 @@ import type {
 type DetailPanelProps = {
   item: LibraryItem | null;
   onClose: () => void;
+  onRemoved: (item: LibraryItem) => void;
+  onRematched: () => void;
 };
 
 /**
@@ -34,7 +36,7 @@ type DetailPanelProps = {
  * panel and those pages render their body through FilmDetailBody /
  * ShowDetailBody, so the two surfaces can't drift the way they used to.
  */
-export function DetailPanel({ item, onClose }: DetailPanelProps) {
+export function DetailPanel({ item, onClose, onRemoved, onRematched }: DetailPanelProps) {
   // Keeps the last item's content visible while the close animation
   // plays — `item` itself goes null immediately on close.
   const [displayItem, setDisplayItem] = useState<LibraryItem | null>(null);
@@ -90,6 +92,8 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
           detail={detail as FilmDetail | null}
           entries={entries as WatchEntry[] | null}
           onGenreNavigate={onClose}
+          onRemoved={() => onRemoved(displayItem)}
+          onRematched={onRematched}
         />
       ) : (
         <ShowDetailBody
@@ -98,6 +102,8 @@ export function DetailPanel({ item, onClose }: DetailPanelProps) {
           detail={detail as ShowDetail | null}
           entries={entries as ShowWatchEntry[] | null}
           onGenreNavigate={onClose}
+          onRemoved={() => onRemoved(displayItem)}
+          onRematched={onRematched}
         />
       )}
     </SidePanel>

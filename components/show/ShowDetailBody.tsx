@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Stars } from "@/components/ui/Stars";
 import { ShowViewingHistory } from "@/components/show/ShowViewingHistory";
 import { SeasonChecklist } from "@/components/show/SeasonChecklist";
+import { RemoveFromLibraryButton } from "@/components/library/RemoveFromLibraryButton";
+import { FixMatchSheet } from "@/components/library/FixMatchSheet";
 import { posterUrl, backdropUrl } from "@/lib/images";
 import { copy } from "@/lib/copy";
 import type { EpisodeWatchEntry, SeasonSummary, ShowDetail, ShowWatchEntry } from "@/lib/types";
@@ -24,6 +27,11 @@ type ShowDetailBodyProps = {
   episodeEntries?: EpisodeWatchEntry[];
   headingLevel?: "h1" | "h2";
   onGenreNavigate?: () => void;
+  /** Both default to the page's own behavior (navigate away) when
+   *  omitted — see RemoveFromLibraryButton/FixMatchSheet. The panel
+   *  overrides both to splice-and-close / close-and-reload instead. */
+  onRemoved?: () => void;
+  onRematched?: (newId: number) => void;
 };
 
 /** Show-side sibling of components/film/FilmDetailBody.tsx — same split,
@@ -37,7 +45,10 @@ export function ShowDetailBody({
   episodeEntries,
   headingLevel = "h2",
   onGenreNavigate,
+  onRemoved,
+  onRematched,
 }: ShowDetailBodyProps) {
+  const [fixMatchOpen, setFixMatchOpen] = useState(false);
   const poster = posterUrl(header.posterPath, "w500");
   const backdrop = detail ? backdropUrl(detail.backdropPath, "w1280") : null;
 
@@ -126,7 +137,33 @@ export function ShowDetailBody({
         </div>
       )}
 
-      <div className="mt-6 px-4 md:px-9">
+      <div className="mt-6 flex items-center gap-4 px-4 md:px-9">
+        <button
+          type="button"
+          onClick={() => setFixMatchOpen(true)}
+          className="text-footnote text-label-2 hover:text-label font-bold outline-offset-2"
+        >
+          {copy.library.fixMatch}
+        </button>
+        <RemoveFromLibraryButton
+          mediaType="show"
+          id={header.id}
+          title={header.title}
+          watchCount={stats.watchCount}
+          onRemoved={onRemoved}
+        />
+      </div>
+
+      <FixMatchSheet
+        open={fixMatchOpen}
+        onClose={() => setFixMatchOpen(false)}
+        mediaType="show"
+        currentId={header.id}
+        title={header.title}
+        onRematched={onRematched}
+      />
+
+      <div className="mt-4 px-4 md:px-9">
         {entries === null ? (
           <div className="flex flex-col gap-2.5">
             <div className="bg-surface-2 h-7 w-40 animate-pulse rounded-xs" />

@@ -271,6 +271,41 @@ export async function findTmdbDirectorId(name: string): Promise<number | null> {
 }
 
 /**
+ * Resolves an actor's name to a TMDB person id — the acting-side sibling
+ * of findTmdbDirectorId, for the "Complete the actor" shelf. Same
+ * search/person call, same exact-name-match pool, but prefers
+ * known_for_department === "Acting" so a name that collides with a
+ * director (or anyone else) doesn't resolve to the wrong filmography.
+ * Returns null rather than guessing when nothing matches.
+ */
+export async function findTmdbActorId(name: string): Promise<number | null> {
+  const url = `${TMDB_BASE}/search/person?query=${encodeURIComponent(name.trim())}&include_adult=false`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB person search failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbPersonSearchResponse;
+  const lower = name.trim().toLowerCase();
+
+  const exact = data.results.filter(
+    (person: TmdbPersonSearchResult) => person.name.trim().toLowerCase() === lower,
+  );
+  const acting = exact.filter((person) => person.known_for_department === "Acting");
+  const pool = acting.length > 0 ? acting : exact;
+
+  if (pool.length === 0) return null;
+  return pool.reduce((best, person) =>
+    (person.popularity ?? 0) > (best.popularity ?? 0) ? person : best,
+  ).id;
+}
+
+/**
  * Everything a person is credited as having directed. TMDB lists a
  * person once per job, so someone who wrote and directed the same film
  * appears twice in `crew` — deduped here by film id so a filmography

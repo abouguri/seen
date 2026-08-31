@@ -3,6 +3,7 @@
  *  is actually exercised rather than assumed. */
 export const NOLAN_ID = 525;
 export const FINCHER_ID = 7467;
+export const CAINE_ID = 3151;
 
 const f = (id: number, title: string, year: number, pop = 50) => ({
   id, title, release_date: `${year}-01-01`, poster_path: `/p${id}.jpg`, popularity: pop,
@@ -30,6 +31,16 @@ export const FINCHER_FILMS = [
   { ...f(14, "Alien 3", 1992, 70), job: "Director" },
 ];
 
+// Michael Caine: appears in two films the user already logged via Nolan
+// (2, 3) plus one gap — exercises the actor shelf with real overlap
+// against the director shelf's own candidates, the way it would in a
+// real archive.
+export const CAINE_FILMS = [
+  f(2, "The Prestige", 2006),
+  f(3, "Inception", 2010),
+  f(30, "The Cider House Rules", 1999, 60),
+];
+
 /** Recommendations for a seed — includes a logged film (3) and a
  *  dismissed one (14), which must both be filtered out. */
 export const RECS = [f(3, "Inception", 2010), f(14, "Alien 3", 1992), f(20, "The Insider", 1999), f(21, "Heat", 1995)];
@@ -54,10 +65,18 @@ export function stubFetch() {
         ] });
       if (q === "David Fincher")
         return json({ results: [{ id: FINCHER_ID, name: "David Fincher", known_for_department: "Directing", popularity: 20 }] });
+      if (q === "Michael Caine")
+        // A directing-department decoy, the actor-side mirror of the Nolan
+        // collision above — findTmdbActorId must prefer the Acting entry.
+        return json({ results: [
+          { id: 8000, name: "Michael Caine", known_for_department: "Directing", popularity: 5 },
+          { id: CAINE_ID, name: "Michael Caine", known_for_department: "Acting", popularity: 40 },
+        ] });
       return json({ results: [] });
     }
     if (url.includes(`/person/${NOLAN_ID}/movie_credits`)) return json({ crew: NOLAN_FILMS });
     if (url.includes(`/person/${FINCHER_ID}/movie_credits`)) return json({ crew: FINCHER_FILMS });
+    if (url.includes(`/person/${CAINE_ID}/movie_credits`)) return json({ cast: CAINE_FILMS });
     if (url.includes("/recommendations")) return json({ results: RECS });
     if (url.includes("/discover/movie")) return json({ results: DECADE_90S });
     return json({ results: [] });

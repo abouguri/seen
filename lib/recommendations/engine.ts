@@ -1,8 +1,10 @@
 import "server-only";
 import {
   discoverTmdbMoviesByDecade,
+  fetchTmdbActingFilms,
   fetchTmdbDirectedFilms,
   fetchTmdbRecommendations,
+  findTmdbActorId,
   findTmdbDirectorId,
 } from "@/lib/tmdb/client";
 import type { TmdbSearchResult } from "@/lib/tmdb/raw-types";
@@ -51,6 +53,12 @@ const MAX_SHELVES = 4;
  *  requests (name → id, id → filmography); six covers the top of any
  *  realistic archive without turning one page render into thirty calls. */
 const MAX_DIRECTORS_ANALYSED = 6;
+
+/** Same reasoning as MAX_DIRECTORS_ANALYSED, for cast. A film contributes
+ *  up to ten cast credits against one director credit, so this matters
+ *  more here — it's what keeps a 30-film archive from queuing up TMDB
+ *  round trips for every actor who appears twice. */
+const MAX_ACTORS_ANALYSED = 6;
 
 /** "Worth another look" only reaches back this far. */
 const REWATCH_YEARS = 3;
@@ -167,6 +175,65 @@ async function buildDirectorProfiles(archive: Archive): Promise<DirectorProfile[
   return profiles.filter((profile): profile is DirectorProfile => profile !== null);
 }
 
+/** Same shape as DirectorProfile, built from cast credits instead of crew.
+ *  A separate type rather than a shared one — the two are grouped, sorted
+ *  and capped identically, but keeping them apart matches the rest of this
+ *  file's preference for explicit, unshared paths per relationship. */
+type ActorProfile = {
+  name: string;
+  seen: ArchiveFilm[];
+  filmography: TmdbSearchResult[];
+  gaps: TmdbSearchResult[];
+  seenInFilmography: number;
+};
+
+async function buildActorProfiles(archive: Archive): Promise<ActorProfile[]> {
+  const byActor = new Map<string, ArchiveFilm[]>();
+  for (const film of archive.films) {
+    for (const actor of film.castMembers) {
+      const name = actor.trim();
+      if (!name) continue;
+      const list = byActor.get(name);
+      if (list) list.push(film);
+      else byActor.set(name, [film]);
+    }
+  }
+
+  const candidates = [...byActor.entries()]
+    .filter(([, films]) => films.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, MAX_ACTORS_ANALYSED);
+
+  const profiles = await Promise.all(
+    candidates.map(([name, seen]) =>
+      settled<ActorProfile | null>(async () => {
+        const personId = await findTmdbActorId(name);
+        if (personId === null) return null;
+
+        const filmography = (await fetchTmdbActingFilms(personId)).filter(isPresentable);
+        if (filmography.length === 0) return null;
+
+        const gaps = filmography
+          .filter(
+            (film) => !archive.loggedIds.has(film.id) && !archive.dismissedIds.has(film.id),
+          )
+          .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+
+        return {
+          name,
+          seen,
+          filmography,
+          gaps,
+          seenInFilmography: filmography.filter((film) => archive.loggedIds.has(film.id))
+            .length,
+        };
+      }, null),
+    ),
+  );
+
+  return profiles.filter((profile): profile is ActorProfile => profile !== null);
+}
+
 /* -------------------------------------------------------------------------
    1. The lead — one film, argued.
    ------------------------------------------------------------------------- */
@@ -264,6 +331,38 @@ function buildDirectorShelves(profiles: DirectorProfile[], leadId: number | null
         kind: "complete-director" as const,
         title: `Complete ${profile.name}`,
         reason: `You've seen ${profile.seenInFilmography} of ${profile.name}'s ${profile.filmography.length}.`,
+        items,
+      };
+    })
+    .filter((shelf) => shelf.items.length > 0);
+}
+
+function buildActorShelves(profiles: ActorProfile[], leadId: number | null): Shelf[] {
+  return profiles
+    .filter((profile) => profile.seenInFilmography >= 2 && profile.gaps.length > 0)
+    .sort((a, b) => b.seenInFilmography - a.seenInFilmography)
+    .slice(0, 1)
+    .map((profile) => {
+      const items = profile.gaps
+        .filter((film) => film.id !== leadId)
+        .slice(0, SHELF_SIZE)
+        .map((film) =>
+          toRecommendation(
+            film,
+            `${profile.name}, ${yearOf(film)} — one of the ${
+              profile.filmography.length - profile.seenInFilmography
+            } you haven't logged.`,
+          ),
+        );
+
+      return {
+        kind: "complete-actor" as const,
+        title: `Complete ${profile.name}`,
+        // Says "appeared in", not just "of X's Y" like the director
+        // shelf — this shelf sits right beside that one, and the two
+        // headings alone ("Complete Christopher Nolan" / "Complete
+        // Michael Caine") don't say which relationship is which.
+        reason: `You've seen ${profile.seenInFilmography} of the ${profile.filmography.length} films ${profile.name} has appeared in.`,
         items,
       };
     })
@@ -416,7 +515,10 @@ export async function buildRecommendations(archive: Archive): Promise<Recommenda
     return { libraryCount, lead, shelves };
   }
 
-  const profiles = await buildDirectorProfiles(archive);
+  const [profiles, actorProfiles] = await Promise.all([
+    buildDirectorProfiles(archive),
+    buildActorProfiles(archive),
+  ]);
   const lead = buildLead(profiles) ?? (await buildSeededLead(archive));
   const leadId = lead?.id ?? null;
 
@@ -429,6 +531,7 @@ export async function buildRecommendations(archive: Archive): Promise<Recommenda
 
   const shelves = dedupeAcrossShelves([
     ...buildDirectorShelves(profiles, leadId),
+    ...buildActorShelves(actorProfiles, leadId),
     ...(blindSpot ? [blindSpot] : []),
     ...seedShelves,
     ...(rewatch ? [rewatch] : []),

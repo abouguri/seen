@@ -27,7 +27,7 @@ function check(name: string, cond: boolean, detail = "") {
 }
 
 const mk = (o: Partial<ArchiveFilm> & { id: number; title: string }): ArchiveFilm => ({
-  year: 2010, posterPath: "/p.jpg", directors: [], genres: [], rating: null, lastWatchedOn: null, ...o,
+  year: 2010, posterPath: "/p.jpg", directors: [], genres: [], castMembers: [], rating: null, lastWatchedOn: null, ...o,
 });
 
 const archiveOf = (films: ArchiveFilm[], dismissed: number[] = []): Archive => ({
@@ -37,8 +37,8 @@ const archiveOf = (films: ArchiveFilm[], dismissed: number[] = []): Archive => (
 const NOLAN = ["Christopher Nolan"], FINCHER = ["David Fincher"];
 const thirty: ArchiveFilm[] = [
   mk({ id: 1, title: "Memento", year: 2000, directors: NOLAN, rating: 9, lastWatchedOn: "2015-03-02" }),
-  mk({ id: 2, title: "The Prestige", year: 2006, directors: NOLAN, rating: 8 }),
-  mk({ id: 3, title: "Inception", year: 2010, directors: NOLAN, rating: 10, lastWatchedOn: "2024-01-01" }),
+  mk({ id: 2, title: "The Prestige", year: 2006, directors: NOLAN, castMembers: ["Michael Caine"], rating: 8 }),
+  mk({ id: 3, title: "Inception", year: 2010, directors: NOLAN, castMembers: ["Michael Caine"], rating: 10, lastWatchedOn: "2024-01-01" }),
   mk({ id: 4, title: "Interstellar", year: 2014, directors: NOLAN, rating: 9 }),
   mk({ id: 5, title: "Dunkirk", year: 2017, directors: NOLAN, rating: 8 }),
   mk({ id: 10, title: "Se7en", year: 1995, directors: FINCHER, rating: 10, lastWatchedOn: "2016-05-05" }),
@@ -100,6 +100,19 @@ console.log("\n=== 30 films (full) ===");
 
   const all = [r.lead!, ...r.shelves.flatMap(s => s.items)].map(i => i.id);
   check("no film appears twice on the page", new Set(all).size === all.length);
+
+  const actorShelf = r.shelves.find(s => s.kind === "complete-actor");
+  check("actor shelf exists", actorShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));
+  if (actorShelf) {
+    check("actor shelf names Michael Caine", actorShelf.title === "Complete Michael Caine",
+          actorShelf.title);
+    check("actor shelf reason states seen/total", actorShelf.reason === "You've seen 2 of the 3 films Michael Caine has appeared in.",
+          actorShelf.reason);
+    check("actor shelf's gap is the unlogged Caine film", actorShelf.items.some(i => i.id === 30),
+          JSON.stringify(actorShelf.items.map(i => i.id)));
+    check("actor shelf doesn't re-offer an already-logged Caine film",
+          !actorShelf.items.some(i => i.id === 2 || i.id === 3));
+  }
 
   const rw = r.shelves.find(s => s.kind === "rewatch");
   if (rw) {

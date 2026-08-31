@@ -28,6 +28,7 @@ export type Recommendation = {
 /** The five shelf kinds, in the order the page renders them. */
 export type ShelfKind =
   | "complete-director"
+  | "complete-actor"
   | "blind-spot"
   | "because-rated"
   | "rewatch";
@@ -59,6 +60,8 @@ export type ArchiveFilm = {
   posterPath: string | null;
   directors: string[];
   genres: string[];
+  /** Top 10 billed, TMDB's own order. */
+  castMembers: string[];
   /** 1–10 as stored (5★ = 10). Null when never rated. */
   rating: number | null;
   lastWatchedOn: string | null;

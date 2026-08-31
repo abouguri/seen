@@ -31,7 +31,9 @@ export async function loadArchive(): Promise<Archive | null> {
   const [filmsResult, dismissedResult] = await Promise.all([
     supabase
       .from("user_films")
-      .select("id, title, release_year, poster_path, directors, genres, rating, last_watched_on"),
+      .select(
+        "id, title, release_year, poster_path, directors, genres, cast_members, rating, last_watched_on",
+      ),
     supabase.from("dismissed_recommendations").select("film_id"),
   ]);
 
@@ -42,6 +44,7 @@ export async function loadArchive(): Promise<Archive | null> {
     posterPath: row.poster_path as string | null,
     directors: (row.directors as string[] | null) ?? [],
     genres: (row.genres as string[] | null) ?? [],
+    castMembers: (row.cast_members as string[] | null) ?? [],
     rating: row.rating as number | null,
     lastWatchedOn: row.last_watched_on as string | null,
   }));

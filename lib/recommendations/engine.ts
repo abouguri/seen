@@ -194,7 +194,7 @@ async function buildActorProfiles(archive: Archive): Promise<ActorProfile[]> {
   const byActor = new Map<string, ArchiveFilm[]>();
   for (const film of archive.films) {
     for (const actor of film.castMembers) {
-      const name = actor.trim();
+      const name = actor.name.trim();
       if (!name) continue;
       const list = byActor.get(name);
       if (list) list.push(film);

@@ -44,7 +44,7 @@ export async function loadArchive(): Promise<Archive | null> {
     posterPath: row.poster_path as string | null,
     directors: (row.directors as string[] | null) ?? [],
     genres: (row.genres as string[] | null) ?? [],
-    castMembers: (row.cast_members as string[] | null) ?? [],
+    castMembers: (row.cast_members as ArchiveFilm["castMembers"] | null) ?? [],
     collectionId: row.collection_id as number | null,
     collectionName: row.collection_name as string | null,
     rating: row.rating as number | null,

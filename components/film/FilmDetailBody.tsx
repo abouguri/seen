@@ -8,6 +8,7 @@ import { ViewingHistory } from "@/components/film/ViewingHistory";
 import { RemoveFromLibraryButton } from "@/components/library/RemoveFromLibraryButton";
 import { FixMatchSheet } from "@/components/library/FixMatchSheet";
 import { PersonLinks } from "@/components/library/PersonLinks";
+import { CastList } from "@/components/film/CastList";
 import { posterUrl, backdropUrl } from "@/lib/images";
 import { formatRuntime } from "@/lib/dates";
 import { copy } from "@/lib/copy";
@@ -196,9 +197,7 @@ export function FilmDetailBody({
         {detail !== null && detail.castMembers.length > 0 && (
           <div className="mt-9">
             <p className="text-eyebrow text-label-3 mb-2.5">{copy.film.cast}</p>
-            <p className="text-subhead text-label-2 leading-relaxed">
-              <PersonLinks names={detail.castMembers} />
-            </p>
+            <CastList cast={detail.castMembers} />
           </div>
         )}
       </div>

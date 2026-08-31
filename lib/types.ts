@@ -15,6 +15,16 @@ export type FilmSummary = {
   hasPosterWallEntry: boolean;
 };
 
+/** A cast credit — id/profilePath are null on a film that hasn't been
+ *  through a full detail fetch since cast started carrying photos
+ *  (2026-08-31); a null profilePath alone just means TMDB has no photo
+ *  for that person. */
+export type CastMember = {
+  id: number | null;
+  name: string;
+  profilePath: string | null;
+};
+
 export type FilmDetail = {
   id: number;
   title: string;
@@ -25,7 +35,7 @@ export type FilmDetail = {
   posterPath: string | null;
   backdropPath: string | null;
   directors: string[];
-  castMembers: string[];
+  castMembers: CastMember[];
   genres: string[];
   tmdbRating: number | null;
 };

@@ -9,6 +9,8 @@
  * produce a card, and the shelf renders nothing.
  */
 
+import type { CastMember } from "@/lib/types";
+
 export type Recommendation = {
   /** TMDB movie id. */
   id: number;
@@ -63,7 +65,7 @@ export type ArchiveFilm = {
   directors: string[];
   genres: string[];
   /** Top 10 billed, TMDB's own order. */
-  castMembers: string[];
+  castMembers: CastMember[];
   /** Both null unless the film has been through a full detail fetch AND
    *  TMDB has it in a collection — most films have neither. */
   collectionId: number | null;

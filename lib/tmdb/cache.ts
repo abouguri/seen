@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TmdbMovieDetail, TmdbSearchResult } from "@/lib/tmdb/raw-types";
-import type { FilmDetail } from "@/lib/types";
+import type { CastMember, FilmDetail } from "@/lib/types";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -16,7 +16,7 @@ export type FilmRow = {
   runtime: number | null;
   overview: string | null;
   directors: string[];
-  cast_members: string[];
+  cast_members: CastMember[];
   genres: string[];
   tmdb_rating: number | null;
   popularity: number | null;
@@ -37,8 +37,10 @@ function extractDirectors(detail: TmdbMovieDetail): string[] {
 }
 
 /** Top 10 billed — TMDB pre-sorts credits.cast by billing order. */
-function extractCast(detail: TmdbMovieDetail): string[] {
-  return (detail.credits?.cast ?? []).slice(0, 10).map((c) => c.name);
+function extractCast(detail: TmdbMovieDetail): CastMember[] {
+  return (detail.credits?.cast ?? [])
+    .slice(0, 10)
+    .map((c) => ({ id: c.id, name: c.name, profilePath: c.profile_path ?? null }));
 }
 
 /**

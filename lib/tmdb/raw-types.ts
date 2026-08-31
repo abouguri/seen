@@ -108,9 +108,13 @@ export type TmdbCrewMember = {
 };
 
 /** TMDB pre-sorts credits.cast by billing order, so no `order` field is
- *  needed here — the top N of the array as returned is the top N billed. */
+ *  needed here — the top N of the array as returned is the top N billed.
+ *  id and profile_path are both native to this response, for the cast
+ *  photo row on the film detail page. */
 export type TmdbCastMember = {
+  id: number;
   name: string;
+  profile_path?: string | null;
 };
 
 export type TmdbGenre = {

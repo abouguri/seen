@@ -2,6 +2,7 @@ import "server-only";
 import type {
   TmdbCollectionDetail,
   TmdbFindResponse,
+  TmdbPersonDetail,
   TmdbPersonMovieCredits,
   TmdbPersonSearchResponse,
   TmdbPersonSearchResult,
@@ -304,6 +305,26 @@ export async function findTmdbActorId(name: string): Promise<number | null> {
   return pool.reduce((best, person) =>
     (person.popularity ?? 0) > (best.popularity ?? 0) ? person : best,
   ).id;
+}
+
+/**
+ * The person's own bio — for the people page's hero (photo, department,
+ * born line). Separate from the search/credits calls above: search only
+ * ever needed enough to disambiguate and resolve an id.
+ */
+export async function fetchTmdbPersonDetail(personId: number): Promise<TmdbPersonDetail> {
+  const url = `${TMDB_BASE}/person/${personId}`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB person detail fetch failed with status ${res.status}`);
+  }
+
+  return (await res.json()) as TmdbPersonDetail;
 }
 
 /**

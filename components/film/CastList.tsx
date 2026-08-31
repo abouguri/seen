@@ -3,7 +3,7 @@ import Link from "next/link";
 import { profileUrl } from "@/lib/images";
 import type { CastMember } from "@/lib/types";
 
-function initials(name: string): string {
+export function initials(name: string): string {
   return name
     .split(" ")
     .map((word) => word[0])

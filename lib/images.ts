@@ -7,7 +7,7 @@ const IMAGE_BASE = "https://image.tmdb.org/t/p/";
 
 export type PosterSize = "w342" | "w500";
 export type BackdropSize = "w1280";
-export type ProfileSize = "w185";
+export type ProfileSize = "w185" | "h632";
 
 export function posterUrl(path: string | null, size: PosterSize): string | null {
   if (!path) return null;

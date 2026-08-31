@@ -172,6 +172,18 @@ export type TmdbPersonSearchResponse = {
   results: TmdbPersonSearchResult[];
 };
 
+/** /person/{id} — the person's own bio, for the person page's hero.
+ *  Not called anywhere today; findTmdbDirectorId/findTmdbActorId only
+ *  ever needed the id from search, never the person's own detail. */
+export type TmdbPersonDetail = {
+  id: number;
+  name: string;
+  biography?: string | null;
+  birthday?: string | null;
+  place_of_birth?: string | null;
+  profile_path: string | null;
+};
+
 /** /person/{id}/movie_credits. `crew` carries directing (and other
  *  behind-the-camera) work, `cast` carries acting roles. One person can
  *  appear more than once in `crew` for the same film (director *and*

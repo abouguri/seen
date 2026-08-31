@@ -246,6 +246,12 @@ export const copy = {
     asDirector: "As director",
     asActor: "As actor",
     empty: "Nothing presentable found for this person.",
+    // The hero eyebrow — derived from what the page itself found (real
+    // directing/acting credits), not TMDB's own known_for_department,
+    // so it's never a claim the page can't back up.
+    director: "Director",
+    actor: "Actor",
+    directorAndActor: "Director & actor",
   },
   with: {
     heading: (company: string) => `Watched with ${company}`,

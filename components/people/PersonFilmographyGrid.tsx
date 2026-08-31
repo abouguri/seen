@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PosterThumb } from "@/components/film/PosterThumb";
 import { copy } from "@/lib/copy";
 
-type FilmographyItem = { id: number; title: string; year: number | null; posterPath: string | null };
+export type FilmographyItem = { id: number; title: string; year: number | null; posterPath: string | null };
 
 type PersonFilmographyGridProps = {
   heading: string;

@@ -127,6 +127,12 @@ export type EpisodeWatchEntry = {
 
 export type LibrarySort = "recent_added" | "recent_watched" | "release_year" | "rating" | "title";
 
+/** The person page's own small sort set — release year (either
+ *  direction) or title. Not LibrarySort: that type's "recent_added"/
+ *  "recent_watched"/"rating" have no meaning for a TMDB filmography,
+ *  which carries no viewing data of its own. */
+export type PersonFilmographySort = "newest" | "oldest" | "title";
+
 export type LibraryFilm = {
   mediaType: "movie";
   id: number;

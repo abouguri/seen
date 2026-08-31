@@ -252,6 +252,12 @@ export const copy = {
     director: "Director",
     actor: "Actor",
     directorAndActor: "Director & actor",
+    sortLabel: "Sort",
+    sort: {
+      newest: "Newest first",
+      oldest: "Oldest first",
+      title: "A–Z",
+    },
   },
   with: {
     heading: (company: string) => `Watched with ${company}`,

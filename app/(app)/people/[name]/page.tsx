@@ -8,7 +8,7 @@ import {
   TmdbError,
 } from "@/lib/tmdb/client";
 import { isPresentable } from "@/lib/recommendations/engine";
-import { PersonFilmographyGrid } from "@/components/people/PersonFilmographyGrid";
+import { PersonFilmography } from "@/components/people/PersonFilmography";
 import { initials } from "@/components/film/CastList";
 import { profileUrl } from "@/lib/images";
 import { copy } from "@/lib/copy";
@@ -139,8 +139,7 @@ export default async function PersonPage({ params }: { params: Promise<{ name: s
       )}
 
       <div className="px-4 md:px-9">
-        <PersonFilmographyGrid heading={copy.people.asDirector} films={directingFilms} loggedFilmIds={loggedFilmIds} />
-        <PersonFilmographyGrid heading={copy.people.asActor} films={actingFilms} loggedFilmIds={loggedFilmIds} />
+        <PersonFilmography directingFilms={directingFilms} actingFilms={actingFilms} loggedFilmIds={loggedFilmIds} />
       </div>
     </div>
   );

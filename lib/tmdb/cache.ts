@@ -22,6 +22,8 @@ export type FilmRow = {
   popularity: number | null;
   synced_at: string;
   enriched_at: string | null;
+  collection_id: number | null;
+  collection_name: string | null;
 };
 
 function extractYear(releaseDate: string | null | undefined): number | null {
@@ -91,6 +93,8 @@ export async function upsertFilmDetail(
     popularity: detail.popularity ?? null,
     synced_at: new Date().toISOString(),
     enriched_at: new Date().toISOString(),
+    collection_id: detail.belongs_to_collection?.id ?? null,
+    collection_name: detail.belongs_to_collection?.name ?? null,
   });
 }
 

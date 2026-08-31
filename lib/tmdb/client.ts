@@ -1,5 +1,6 @@
 import "server-only";
 import type {
+  TmdbCollectionDetail,
   TmdbFindResponse,
   TmdbPersonMovieCredits,
   TmdbPersonSearchResponse,
@@ -412,4 +413,25 @@ export async function discoverTmdbMoviesByGenre(
 
   const data = (await res.json()) as TmdbSearchResponse;
   return data.results;
+}
+
+/**
+ * A franchise's full membership — the source for the "Complete the
+ * franchise" shelf. films.collection_id is populated at enrichment time
+ * from belongs_to_collection, so this is only ever called with an id
+ * already known to exist.
+ */
+export async function fetchTmdbCollectionDetail(collectionId: number): Promise<TmdbCollectionDetail> {
+  const url = `${TMDB_BASE}/collection/${collectionId}`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB collection fetch failed with status ${res.status}`);
+  }
+
+  return (await res.json()) as TmdbCollectionDetail;
 }

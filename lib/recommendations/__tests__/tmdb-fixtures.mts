@@ -57,6 +57,17 @@ export const GENRE_MAP = [
 ];
 export const HORROR_DISCOVER = [f(11, "Fight Club", 1999), f(24, "The Thing", 1982), f(25, "Hereditary", 2018)];
 
+// Toy Story: user logged 40, 41; 42 and 43 are gaps, deliberately listed
+// out of chronological order so the shelf's own sort is what puts them
+// back in sequence, not the fixture's ordering.
+export const TOY_STORY_ID = 10194;
+export const TOY_STORY_PARTS = [
+  f(41, "Toy Story 2", 1999),
+  f(43, "Toy Story 4", 2019, 70),
+  f(40, "Toy Story", 1995),
+  f(42, "Toy Story 3", 2010, 65),
+];
+
 export function stubFetch() {
   const calls: string[] = [];
   globalThis.fetch = (async (input: string | URL) => {
@@ -88,6 +99,8 @@ export function stubFetch() {
     if (url.includes(`/person/${CAINE_ID}/movie_credits`)) return json({ cast: CAINE_FILMS });
     if (url.includes("/recommendations")) return json({ results: RECS });
     if (url.includes("/genre/movie/list")) return json({ genres: GENRE_MAP });
+    if (url.includes(`/collection/${TOY_STORY_ID}`))
+      return json({ id: TOY_STORY_ID, name: "Toy Story Collection", parts: TOY_STORY_PARTS });
     if (url.includes("/discover/movie")) {
       if (url.includes("with_genres")) return json({ results: HORROR_DISCOVER });
       return json({ results: DECADE_90S });

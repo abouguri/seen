@@ -134,6 +134,19 @@ export type TmdbMovieDetail = {
     crew: TmdbCrewMember[];
     cast?: TmdbCastMember[];
   };
+  /** Native to the base response — no append_to_response needed, unlike
+   *  credits. Absent (not just null) on a film that isn't part of one. */
+  belongs_to_collection?: { id: number; name: string } | null;
+};
+
+/** /collection/{id} — a franchise's full membership, for the "Complete
+ *  the franchise" shelf. `parts` carries the same fields search/discover
+ *  already give per film, so it reuses TmdbSearchResult rather than a
+ *  parallel shape. */
+export type TmdbCollectionDetail = {
+  id: number;
+  name: string;
+  parts: TmdbSearchResult[];
 };
 
 /** /search/person — only what's needed to pick the right director out of

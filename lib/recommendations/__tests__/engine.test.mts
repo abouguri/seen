@@ -14,7 +14,7 @@
  *  `server-only` marker resolves to its empty server build rather than
  *  throwing.)
  */
-import { stubFetch } from "./tmdb-fixtures.mjs";
+import { stubFetch, TOY_STORY_ID } from "./tmdb-fixtures.mjs";
 const calls = stubFetch();
 
 const { buildRecommendations, THIN_ARCHIVE } = await import("@/lib/recommendations/engine");
@@ -27,7 +27,8 @@ function check(name: string, cond: boolean, detail = "") {
 }
 
 const mk = (o: Partial<ArchiveFilm> & { id: number; title: string }): ArchiveFilm => ({
-  year: 2010, posterPath: "/p.jpg", directors: [], genres: [], castMembers: [], rating: null, lastWatchedOn: null, ...o,
+  year: 2010, posterPath: "/p.jpg", directors: [], genres: [], castMembers: [],
+  collectionId: null, collectionName: null, rating: null, lastWatchedOn: null, ...o,
 });
 
 const archiveOf = (films: ArchiveFilm[], dismissed: number[] = []): Archive => ({
@@ -44,11 +45,13 @@ const thirty: ArchiveFilm[] = [
   mk({ id: 10, title: "Se7en", year: 1995, directors: FINCHER, genres: DRAMA, rating: 10, lastWatchedOn: "2016-05-05" }),
   mk({ id: 11, title: "Fight Club", year: 1999, directors: FINCHER, genres: DRAMA, rating: 9 }),
   mk({ id: 12, title: "Zodiac", year: 2007, directors: FINCHER, genres: DRAMA, rating: 8 }),
+  mk({ id: 40, title: "Toy Story", year: 1995, genres: DRAMA, collectionId: TOY_STORY_ID, collectionName: "Toy Story Collection" }),
+  mk({ id: 41, title: "Toy Story 2", year: 1999, genres: DRAMA, collectionId: TOY_STORY_ID, collectionName: "Toy Story Collection" }),
 ];
 // pad to 30 across decades, 2010s heaviest so the 90s read as thinnest.
 // The first two fillers are tagged Horror against the rest's Drama, so
 // Horror (2) reads as the thinnest genre.
-for (let i = 0; i < 22; i++) {
+for (let i = 0; i < 20; i++) {
   thirty.push(mk({
     id: 500 + i,
     title: `Filler ${i}`,
@@ -109,14 +112,31 @@ console.log("\n=== 30 films (full) ===");
   const all = [r.lead!, ...r.shelves.flatMap(s => s.items)].map(i => i.id);
   check("no film appears twice on the page", new Set(all).size === all.length);
 
+  // Position 5+ in the candidate list — MAX_SHELVES=4 means this can
+  // lose out to director/actor/franchise/decade-blind-spot even though
+  // it has real content, same as seed/rewatch always could. Asserted
+  // only when present, same discipline as the rewatch check below.
   const genreShelf = r.shelves.find(s => s.kind === "genre-blind-spot");
-  check("genre blind-spot shelf exists", genreShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));
   if (genreShelf) {
     check("genre shelf names Horror", genreShelf.title === "Your Horror shelf is thin", genreShelf.title);
     check("genre shelf reason states the count", genreShelf.reason === "Your Horror shelf is the thinnest — 2 films.",
           genreShelf.reason);
     check("genre shelf doesn't re-offer the logged Horror-discover film",
           !genreShelf.items.some(i => i.id === 11));
+  }
+
+  const franchiseShelf = r.shelves.find(s => s.kind === "complete-franchise");
+  check("franchise shelf exists", franchiseShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));
+  if (franchiseShelf) {
+    check("franchise shelf names Toy Story Collection",
+          franchiseShelf.title === "Complete Toy Story Collection", franchiseShelf.title);
+    check("franchise shelf reason states seen/total",
+          franchiseShelf.reason === "You've seen 2 of the 4 films in Toy Story Collection.", franchiseShelf.reason);
+    check("franchise shelf doesn't re-offer an already-logged Toy Story film",
+          !franchiseShelf.items.some(i => i.id === 40 || i.id === 41));
+    check("franchise gaps are in chronological order (42 before 43)",
+          franchiseShelf.items.map(i => i.id).join(",") === "42,43",
+          JSON.stringify(franchiseShelf.items.map(i => i.id)));
   }
 
   const actorShelf = r.shelves.find(s => s.kind === "complete-actor");

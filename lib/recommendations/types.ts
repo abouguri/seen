@@ -29,6 +29,7 @@ export type Recommendation = {
 export type ShelfKind =
   | "complete-director"
   | "complete-actor"
+  | "complete-franchise"
   | "blind-spot"
   | "genre-blind-spot"
   | "because-rated"
@@ -63,6 +64,10 @@ export type ArchiveFilm = {
   genres: string[];
   /** Top 10 billed, TMDB's own order. */
   castMembers: string[];
+  /** Both null unless the film has been through a full detail fetch AND
+   *  TMDB has it in a collection — most films have neither. */
+  collectionId: number | null;
+  collectionName: string | null;
   /** 1–10 as stored (5★ = 10). Null when never rated. */
   rating: number | null;
   lastWatchedOn: string | null;

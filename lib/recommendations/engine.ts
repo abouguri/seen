@@ -3,6 +3,7 @@ import {
   discoverTmdbMoviesByDecade,
   discoverTmdbMoviesByGenre,
   fetchTmdbActingFilms,
+  fetchTmdbCollectionDetail,
   fetchTmdbDirectedFilms,
   fetchTmdbRecommendations,
   findTmdbActorId,
@@ -538,6 +539,78 @@ function buildRewatchShelf(archive: Archive): Shelf | null {
   };
 }
 
+/* -------------------------------------------------------------------------
+   6. Complete the franchise — a collection with a real gap.
+   ------------------------------------------------------------------------- */
+
+type FranchiseGroup = {
+  collectionId: number;
+  collectionName: string;
+  seenCount: number;
+};
+
+/** Unlike buildDirectorProfiles/buildActorProfiles, no TMDB round trip
+ *  here — collection membership is already known locally (populated at
+ *  enrichment time), so grouping is pure archive math. Only the gap list
+ *  needs a fetch, and only for the one collection that wins. */
+function buildFranchiseGroups(archive: Archive): FranchiseGroup[] {
+  const byCollection = new Map<number, FranchiseGroup>();
+  for (const film of archive.films) {
+    if (film.collectionId === null || film.collectionName === null) continue;
+    const existing = byCollection.get(film.collectionId);
+    if (existing) existing.seenCount++;
+    else
+      byCollection.set(film.collectionId, {
+        collectionId: film.collectionId,
+        collectionName: film.collectionName,
+        seenCount: 1,
+      });
+  }
+  return [...byCollection.values()];
+}
+
+/**
+ * Unlike the director/actor shelves, one seen film is enough to be a
+ * candidate — collection membership is TMDB's own fact rather than a
+ * pattern this file is inferring, so "you've seen 1 of 3" is already a
+ * true, useful reason. The bar here is a real gap, not a repeat.
+ */
+async function buildFranchiseShelf(archive: Archive, leadId: number | null): Promise<Shelf | null> {
+  const groups = buildFranchiseGroups(archive).sort((a, b) => b.seenCount - a.seenCount);
+  if (groups.length === 0) return null;
+
+  const top = groups[0];
+
+  return settled(async () => {
+    const detail = await fetchTmdbCollectionDetail(top.collectionId);
+    const parts = detail.parts.filter(isPresentable);
+
+    // Recomputed against the fresh fetch, not top.seenCount — same
+    // discipline as seenInFilmography above, so a title/id mismatch
+    // between the archive and TMDB's current listing can't inflate it.
+    const seenInCollection = parts.filter((film) => archive.loggedIds.has(film.id)).length;
+    if (seenInCollection === 0) return null;
+
+    const items = parts
+      .filter((film) => !archive.loggedIds.has(film.id) && !archive.dismissedIds.has(film.id))
+      .filter((film) => film.id !== leadId)
+      // Chronological, not popularity — a franchise gap is "watch this
+      // one next in sequence," unlike every other shelf here.
+      .sort((a, b) => (yearOf(a) ?? 0) - (yearOf(b) ?? 0))
+      .slice(0, SHELF_SIZE)
+      .map((film) => toRecommendation(film, `${yearOf(film)} — next in ${top.collectionName}.`));
+
+    if (items.length === 0) return null;
+
+    return {
+      kind: "complete-franchise" as const,
+      title: `Complete ${top.collectionName}`,
+      reason: `You've seen ${seenInCollection} of the ${parts.length} films in ${top.collectionName}.`,
+      items,
+    };
+  }, null);
+}
+
 /* ------------------------------------------------------------------------- */
 
 /**
@@ -572,9 +645,10 @@ export async function buildRecommendations(archive: Archive): Promise<Recommenda
   const lead = buildLead(profiles) ?? (await buildSeededLead(archive));
   const leadId = lead?.id ?? null;
 
-  const [blindSpot, genreBlindSpot, seedShelves] = await Promise.all([
+  const [blindSpot, genreBlindSpot, franchise, seedShelves] = await Promise.all([
     buildBlindSpotShelf(archive, leadId),
     buildGenreBlindSpotShelf(archive, leadId),
+    buildFranchiseShelf(archive, leadId),
     buildSeedShelves(archive, leadId, 2),
   ]);
 
@@ -583,6 +657,7 @@ export async function buildRecommendations(archive: Archive): Promise<Recommenda
   const shelves = dedupeAcrossShelves([
     ...buildDirectorShelves(profiles, leadId),
     ...buildActorShelves(actorProfiles, leadId),
+    ...(franchise ? [franchise] : []),
     ...(blindSpot ? [blindSpot] : []),
     ...(genreBlindSpot ? [genreBlindSpot] : []),
     ...seedShelves,

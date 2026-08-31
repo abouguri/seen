@@ -32,7 +32,7 @@ export async function loadArchive(): Promise<Archive | null> {
     supabase
       .from("user_films")
       .select(
-        "id, title, release_year, poster_path, directors, genres, cast_members, rating, last_watched_on",
+        "id, title, release_year, poster_path, directors, genres, cast_members, collection_id, collection_name, rating, last_watched_on",
       ),
     supabase.from("dismissed_recommendations").select("film_id"),
   ]);
@@ -45,6 +45,8 @@ export async function loadArchive(): Promise<Archive | null> {
     directors: (row.directors as string[] | null) ?? [],
     genres: (row.genres as string[] | null) ?? [],
     castMembers: (row.cast_members as string[] | null) ?? [],
+    collectionId: row.collection_id as number | null,
+    collectionName: row.collection_name as string | null,
     rating: row.rating as number | null,
     lastWatchedOn: row.last_watched_on as string | null,
   }));

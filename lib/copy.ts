@@ -328,6 +328,11 @@ export const copy = {
     lastLogged: "Most recent title logged",
     daysSuffix: (n: number) => `${n} day${n === 1 ? "" : "s"} apart`,
     loadFailed: "Couldn't load your stats. Check your connection and try again.",
+    yearInReview: (year: number) => `${year} in review`,
+    viewYearInReview: (year: number) => `Your ${year} in review`,
+    allTime: "All time",
+    copyLink: "Copy link",
+    linkCopied: "Copied",
   },
   settings: {
     title: "Settings",

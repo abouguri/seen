@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { computeStats, type EpisodeEntryRow, type MovieEntryRow, type ShowEntryRow } from "@/lib/stats/compute";
 import { StatsBody } from "@/components/stats/StatsBody";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { copy } from "@/lib/copy";
+
+const LAST_COMPLETED_YEAR = new Date().getFullYear() - 1;
 
 export default async function StatsPage() {
   const supabase = await createClient();
@@ -38,7 +41,10 @@ export default async function StatsPage() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-6 pb-16 md:px-9">
-      <h1 className="text-display-1 mb-6">{copy.stats.title}</h1>
+      <h1 className="text-display-1 mb-3">{copy.stats.title}</h1>
+      <Link href={`/stats/${LAST_COMPLETED_YEAR}`} className="text-body text-accent-text mb-6 inline-block">
+        {copy.stats.viewYearInReview(LAST_COMPLETED_YEAR)}
+      </Link>
       <StatsBody stats={stats} />
     </div>
   );

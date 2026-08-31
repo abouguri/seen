@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -18,11 +18,51 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "dark", label: copy.settings.appearanceDark },
 ];
 
-export function SettingsContent({ email }: { email: string }) {
+export function SettingsContent({
+  email,
+  userId,
+  initialPublicStats,
+}: {
+  email: string;
+  userId: string;
+  initialPublicStats: boolean;
+}) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [publicStats, setPublicStats] = useState(initialPublicStats);
+  const [copied, setCopied] = useState(false);
+  // Starts as the origin-less relative path on both server and initial
+  // client render (so they match), then fills in the real origin after
+  // mount — window.location isn't available during SSR, and branching
+  // render output on typeof window is exactly what causes a hydration
+  // mismatch (the server and the first client render must produce
+  // identical output; only an effect runs after that).
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const publicStatsUrl = `${origin}/u/${userId}/stats`;
+
+  async function handleTogglePublicStats() {
+    const next = !publicStats;
+    setPublicStats(next); // optimistic — this toggle has no failure mode worth blocking on
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ publicStats: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setPublicStats(!next);
+    }
+  }
+
+  async function handleCopyLink() {
+    await navigator.clipboard.writeText(publicStatsUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -93,6 +133,42 @@ export function SettingsContent({ email }: { email: string }) {
             <Button variant="secondary">{copy.settings.exportCsv}</Button>
           </a>
         </div>
+      </Section>
+
+      <Section title={copy.settings.publicStatsSection}>
+        <p className="text-body text-label-2 mb-3">{copy.settings.publicStatsDescription}</p>
+        <button
+          type="button"
+          onClick={handleTogglePublicStats}
+          role="switch"
+          aria-checked={publicStats}
+          className={clsx(
+            "flex h-7 w-12 items-center rounded-full p-1 transition-colors duration-(--t-hover)",
+            publicStats ? "bg-accent" : "bg-surface-2",
+          )}
+        >
+          <span
+            className={clsx(
+              "h-5 w-5 rounded-full bg-white transition-transform duration-(--t-hover)",
+              publicStats && "translate-x-5",
+            )}
+          />
+          <span className="sr-only">{copy.settings.publicStatsToggleLabel}</span>
+        </button>
+
+        {publicStats && (
+          <div className="mt-4">
+            <p className="text-footnote text-label-3 mb-1.5">{copy.settings.publicStatsUrlLabel}</p>
+            <div className="flex items-center gap-2">
+              <code className="text-footnote bg-surface-2 text-label truncate rounded-xs px-2 py-1.5">
+                {publicStatsUrl}
+              </code>
+              <Button variant="secondary" onClick={handleCopyLink} className="shrink-0">
+                {copied ? copy.settings.publicStatsCopied : copy.settings.publicStatsCopyLink}
+              </Button>
+            </div>
+          </div>
+        )}
       </Section>
 
       <Section title={copy.settings.aboutSection}>

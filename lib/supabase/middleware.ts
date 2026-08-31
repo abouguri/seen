@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/sign-in", "/auth"];
+// "/u" is the opt-in public stats page (§ ROADMAP.md #9) — the one
+// route in the app that's meant to be reachable with no session at all.
+const PUBLIC_PATHS = ["/sign-in", "/auth", "/u"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(

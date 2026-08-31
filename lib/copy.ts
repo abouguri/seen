@@ -236,6 +236,9 @@ export const copy = {
     heading: (company: string) => `Watched with ${company}`,
     empty: "Nothing found.",
   },
+  publicStats: {
+    notAvailable: "This stats page isn't available.",
+  },
   episodes: {
     /* SeasonChecklist — the season/episode tracking entry point on the
        show detail page (§ ROADMAP.md #1). Deliberately separate from
@@ -347,6 +350,13 @@ export const copy = {
     deleteAccountAction: "Delete account",
     aboutSection: "About",
     tmdbAttribution: "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+    publicStatsSection: "Public stats",
+    publicStatsDescription:
+      "Share a page with your numbers — titles per year, decades, most-seen directors, total hours. Never your notes, who with, or where.",
+    publicStatsToggleLabel: "Make my stats page public",
+    publicStatsUrlLabel: "Your public stats page",
+    publicStatsCopyLink: "Copy link",
+    publicStatsCopied: "Copied",
   },
   import: {
     title: "Import",

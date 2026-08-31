@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { posterUrl } from "@/lib/images";
 import { formatWatchedDate } from "@/lib/dates";
 import { copy } from "@/lib/copy";
-import type { FilmSummary, ShowSummary } from "@/lib/types";
+import type { FilmSummary, NoteMatch, ShowSummary } from "@/lib/types";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -20,7 +20,7 @@ type SearchResult =
 
 const DEBOUNCE_MS = 250;
 
-function hrefFor(item: SearchResult) {
+function hrefFor(item: { mediaType: "movie" | "show"; id: number }) {
   return item.mediaType === "movie" ? `/film/${item.id}` : `/show/${item.id}`;
 }
 
@@ -54,6 +54,7 @@ export function SearchPanel({
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [noteMatches, setNoteMatches] = useState<NoteMatch[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +67,7 @@ export function SearchPanel({
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setNoteMatches([]);
       setStatus("idle");
       return;
     }
@@ -75,7 +77,7 @@ export function SearchPanel({
       setStatus("loading");
       const q = encodeURIComponent(query);
 
-      const [movies, shows] = await Promise.allSettled([
+      const [movies, shows, notes] = await Promise.allSettled([
         fetch(`/api/tmdb/search?q=${q}`, { signal: controller.signal }).then(async (res) => {
           if (!res.ok) throw new Error();
           return (await res.json()) as FilmSummary[];
@@ -83,6 +85,14 @@ export function SearchPanel({
         fetch(`/api/tmdb/search-shows?q=${q}`, { signal: controller.signal }).then(async (res) => {
           if (!res.ok) throw new Error();
           return (await res.json()) as ShowSummary[];
+        }),
+        // Memory search (§ ROADMAP.md #6) — a search over the user's own
+        // notes, not TMDB. Best-effort: unlike the two above, a failure
+        // here just means an empty "From your notes" section, not a
+        // page-level error — title search is still the primary result.
+        fetch(`/api/entries/search-notes?q=${q}`, { signal: controller.signal }).then(async (res) => {
+          if (!res.ok) throw new Error();
+          return (await res.json()) as NoteMatch[];
         }),
       ]);
 
@@ -104,6 +114,7 @@ export function SearchPanel({
       ];
 
       setResults(merged);
+      setNoteMatches(notes.status === "fulfilled" ? notes.value : []);
       setStatus("success");
     }, DEBOUNCE_MS);
 
@@ -171,6 +182,7 @@ export function SearchPanel({
 
         {status === "success" &&
           results.length === 0 &&
+          noteMatches.length === 0 &&
           (isPage ? (
             <EmptyState
               title={copy.search.noResultsTitle}
@@ -229,6 +241,30 @@ export function SearchPanel({
             <ul className="flex flex-col gap-1">
               {otherResults.map((item) => (
                 <ResultRow key={`${item.mediaType}-${item.id}`} item={item} onNavigate={onNavigate} />
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {noteMatches.length > 0 && (
+          <section>
+            <h2
+              className={clsx(
+                "text-eyebrow text-label-3 pb-3",
+                (seenResults.length > 0 || otherResults.length > 0) && isPage
+                  ? "border-separator mt-8 border-t pt-6"
+                  : "pt-6",
+              )}
+            >
+              {copy.search.notesHeading}
+            </h2>
+            <ul className="flex flex-col gap-1">
+              {noteMatches.map((match) => (
+                <NoteResultRow
+                  key={`${match.mediaType}-${match.id}-${match.watchedOn ?? match.note}`}
+                  match={match}
+                  onNavigate={onNavigate}
+                />
               ))}
             </ul>
           </section>
@@ -295,6 +331,34 @@ function ResultRow({ item, onNavigate }: { item: SearchResult; onNavigate?: () =
         <span className="text-caption border-separator-strong text-label-2 group-hover:text-label hidden shrink-0 rounded-xs border px-3 py-2 font-extrabold transition-colors duration-(--t-hover) sm:inline">
           {copy.search.logIt}
         </span>
+      </Link>
+    </li>
+  );
+}
+
+/** A memory-search hit — the note that matched, not a "Log it" prompt:
+ *  this title is by definition already logged. */
+function NoteResultRow({ match, onNavigate }: { match: NoteMatch; onNavigate?: () => void }) {
+  return (
+    <li>
+      <Link
+        href={hrefFor(match)}
+        onClick={onNavigate}
+        className="hover:bg-surface-2 group flex items-start gap-3.5 rounded-sm p-2 -outline-offset-2 transition-colors duration-(--t-hover)"
+      >
+        <PosterThumb
+          title={match.title}
+          year={match.year}
+          posterPath={match.posterPath}
+          size="w342"
+          sizes="40px"
+          className="mt-0.5 w-10 shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-subhead text-label truncate font-bold">{match.title}</p>
+          <p className="text-footnote text-label-2 truncate">{formatWatchedDate(match)}</p>
+          <p className="text-footnote text-label mt-1 line-clamp-2">{match.note}</p>
+        </div>
       </Link>
     </li>
   );

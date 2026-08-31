@@ -230,6 +230,48 @@ export type ShowWatchEntry = {
   createdAt: string;
 };
 
+/** One title watched with a given companion — components/library's
+ *  linked `company` text lands on /with/[company], built entirely from
+ *  the user's own entries (no TMDB involved, unlike person pages). */
+export type CompanyMatch = {
+  mediaType: "movie" | "show";
+  id: number;
+  title: string;
+  year: number | null;
+  posterPath: string | null;
+  watchedOn: string | null;
+  precision: WatchPrecision;
+  eraLabel: string | null;
+};
+
+/** A note that matched a memory-search query — always "seen" by
+ *  definition (a note only exists on a logged viewing), so this carries
+ *  the date and excerpt a search result needs instead of a seen badge. */
+export type NoteMatch = {
+  mediaType: "movie" | "show";
+  id: number;
+  title: string;
+  year: number | null;
+  posterPath: string | null;
+  watchedOn: string | null;
+  precision: WatchPrecision;
+  eraLabel: string | null;
+  note: string;
+};
+
+/** A past viewing that happened on today's month/day — precision:'day'
+ *  only, since a year/era-precision watchedOn is a placeholder date, not
+ *  a real one (see lib/on-this-day.ts). */
+export type OnThisDayEntry = {
+  mediaType: "movie" | "show";
+  id: number;
+  title: string;
+  posterPath: string | null;
+  watchedOn: string;
+  note: string | null;
+  yearsAgo: number;
+};
+
 export type Stats = {
   filmsPerYear: { year: number; count: number }[];
   decadesWatched: { decade: number; count: number }[];

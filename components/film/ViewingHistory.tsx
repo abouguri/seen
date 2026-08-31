@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { clsx } from "clsx";
@@ -176,45 +177,59 @@ export function ViewingHistory({ filmId, initialEntries }: ViewingHistoryProps) 
                       : "bg-accent-text",
                 )}
               />
-              <button
-                type="button"
-                onClick={() => setEditingEntry(entry)}
-                className="min-w-0 flex-1 rounded-xs text-left outline-offset-2"
-              >
-                <div className="flex flex-wrap items-baseline gap-2.5">
-                  <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>
-                  {entry.rating !== null && <Stars value={entry.rating} size={13} />}
-                </div>
-                {entry.note && (
-                  // The note is the one piece of a viewing you actually
-                  // wrote, so it's set larger and in the full label
-                  // colour while the metadata around it stays muted.
-                  // It used to take the display face too, but that only
-                  // worked while the display face was a serif — Helvetica
-                  // beside Manrope at 19px reads as a mistake, not as a
-                  // second voice.
-                  <p className="text-label mt-2 text-[1.1875rem] leading-snug">
-                    {entry.note}
-                  </p>
-                )}
+              <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => setEditingEntry(entry)}
+                  className="w-full rounded-xs text-left outline-offset-2"
+                >
+                  <div className="flex flex-wrap items-baseline gap-2.5">
+                    <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>
+                    {entry.rating !== null && <Stars value={entry.rating} size={13} />}
+                  </div>
+                  {entry.note && (
+                    // The note is the one piece of a viewing you actually
+                    // wrote, so it's set larger and in the full label
+                    // colour while the metadata around it stays muted.
+                    // It used to take the display face too, but that only
+                    // worked while the display face was a serif — Helvetica
+                    // beside Manrope at 19px reads as a mistake, not as a
+                    // second voice.
+                    <p className="text-label mt-2 text-[1.1875rem] leading-snug">
+                      {entry.note}
+                    </p>
+                  )}
+                  {entry.tags.length > 0 && (
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      {entry.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-caption bg-accent-dim text-accent-text rounded-xs px-2 py-1 font-extrabold"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </button>
+                {/* A sibling of the edit button, not a child of it — a
+                    Link can't nest inside a <button> (LibraryTile.tsx's
+                    quick-log button documents the same constraint). */}
                 {(entry.place || entry.company) && (
                   <p className="text-footnote text-label-2 mt-1.5">
-                    {[entry.place, entry.company].filter(Boolean).join(" · ")}
+                    {entry.place}
+                    {entry.place && entry.company && " · "}
+                    {entry.company && (
+                      <Link
+                        href={`/with/${encodeURIComponent(entry.company)}`}
+                        className="rounded-xs outline-offset-2 hover:underline"
+                      >
+                        {entry.company}
+                      </Link>
+                    )}
                   </p>
                 )}
-                {entry.tags.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {entry.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-caption bg-accent-dim text-accent-text rounded-xs px-2 py-1 font-extrabold"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </button>
+              </div>
               <Button
                 variant="icon-danger"
                 onClick={() => setDeletingEntry(entry)}

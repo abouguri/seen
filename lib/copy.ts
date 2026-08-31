@@ -41,6 +41,9 @@ export const copy = {
     emptyHint: "Add five films and this page turns on.",
     nothingToSay:
       "Nothing new to suggest right now. Log a few more films — or check back once the archive has grown.",
+    onThisDayHeading: "On this day",
+    onThisDayYearsAgo: (n: number) => `${n} year${n === 1 ? "" : "s"} ago`,
+    onThisDayWrote: "You wrote:",
   },
 
   notFound: {
@@ -203,6 +206,7 @@ export const copy = {
     inArchive: "In your archive",
     elsewhere: "Elsewhere",
     logIt: "Log it",
+    notesHeading: "From your notes",
   },
   add: {
     eyebrow: "Poster wall",
@@ -227,6 +231,10 @@ export const copy = {
     asDirector: "As director",
     asActor: "As actor",
     empty: "Nothing presentable found for this person.",
+  },
+  with: {
+    heading: (company: string) => `Watched with ${company}`,
+    empty: "Nothing found.",
   },
   episodes: {
     /* SeasonChecklist — the season/episode tracking entry point on the

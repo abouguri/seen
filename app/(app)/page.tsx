@@ -2,8 +2,11 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/Button";
 import { LeadRecommendation } from "@/components/home/LeadRecommendation";
 import { RecommendationShelf } from "@/components/home/RecommendationShelf";
+import { OnThisDay } from "@/components/home/OnThisDay";
 import { loadArchive } from "@/lib/recommendations/archive";
 import { buildRecommendations, THIN_ARCHIVE } from "@/lib/recommendations/engine";
+import { getOnThisDayEntries } from "@/lib/on-this-day";
+import { createClient } from "@/lib/supabase/server";
 import { copy } from "@/lib/copy";
 
 /**
@@ -31,8 +34,17 @@ import { copy } from "@/lib/copy";
  * a poster grid is a moiré rather than a texture.
  */
 export default async function HomePage() {
-  const archive = await loadArchive();
-  if (!archive) return null; // middleware redirects; nothing to render.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null; // middleware redirects; nothing to render.
+
+  const [archive, onThisDayEntries] = await Promise.all([
+    loadArchive(),
+    getOnThisDayEntries(supabase, user.id),
+  ]);
+  if (!archive) return null;
 
   const { libraryCount, lead, shelves } = await buildRecommendations(archive);
 
@@ -92,6 +104,8 @@ export default async function HomePage() {
           )}
         </div>
       </div>
+
+      <OnThisDay entries={onThisDayEntries} />
 
       {libraryCount > 0 && (
         <div className="mx-auto w-full max-w-350 px-4 md:px-9">

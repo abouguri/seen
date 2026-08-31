@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { clsx } from "clsx";
@@ -184,26 +185,39 @@ export function ShowViewingHistory({ showId, initialEntries }: ShowViewingHistor
                       : "bg-accent-text",
                 )}
               />
-              <button
-                type="button"
-                onClick={() => setEditingEntry(entry)}
-                className="min-w-0 flex-1 rounded-xs text-left outline-offset-2"
-              >
-                <div className="flex flex-wrap items-baseline gap-2.5">
-                  <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>
-                  {entry.rating !== null && <Stars value={entry.rating} size={13} />}
-                </div>
-                {entry.note && (
-                  <p className="text-label mt-2 text-[1.1875rem] leading-snug">
-                    {entry.note}
-                  </p>
-                )}
+              <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => setEditingEntry(entry)}
+                  className="w-full rounded-xs text-left outline-offset-2"
+                >
+                  <div className="flex flex-wrap items-baseline gap-2.5">
+                    <p className="text-subhead font-extrabold">{formatWatchedDate(entry)}</p>
+                    {entry.rating !== null && <Stars value={entry.rating} size={13} />}
+                  </div>
+                  {entry.note && (
+                    <p className="text-label mt-2 text-[1.1875rem] leading-snug">
+                      {entry.note}
+                    </p>
+                  )}
+                </button>
+                {/* A sibling of the edit button, not a child of it — see
+                    the same note in components/film/ViewingHistory.tsx. */}
                 {(entry.place || entry.company) && (
                   <p className="text-footnote text-label-2 mt-1.5">
-                    {[entry.place, entry.company].filter(Boolean).join(" · ")}
+                    {entry.place}
+                    {entry.place && entry.company && " · "}
+                    {entry.company && (
+                      <Link
+                        href={`/with/${encodeURIComponent(entry.company)}`}
+                        className="rounded-xs outline-offset-2 hover:underline"
+                      >
+                        {entry.company}
+                      </Link>
+                    )}
                   </p>
                 )}
-              </button>
+              </div>
               <Button
                 variant="icon-danger"
                 onClick={() => setDeletingEntry(entry)}

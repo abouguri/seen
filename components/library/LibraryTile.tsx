@@ -12,8 +12,8 @@ const LONG_PRESS_MS = 500;
 type LibraryTileProps = {
   film: LibraryItem;
   onContextMenu: (film: LibraryItem, x: number, y: number) => void;
-  /** Opens the detail panel — DetailModal, not a page navigation (see
-   *  components/library/DetailModal.tsx for why). */
+  /** Opens the detail panel, not a page navigation (see
+   *  components/library/DetailPanel.tsx for why). */
   onOpen: (film: LibraryItem) => void;
   /** Opens the log-viewing sheet directly — the hover/focus quick-action,
    *  a shortcut to the same thing the context menu's "Log another

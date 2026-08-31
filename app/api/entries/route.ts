@@ -11,7 +11,7 @@ const getQuerySchema = z.object({ filmId: z.coerce.number().int().positive() });
 /**
  * Lists one film's viewing history — the film detail page already does
  * this as a direct server-side query; this is the same query exposed as
- * JSON, for the library's detail modal (components/library/DetailModal.tsx),
+ * JSON, for the library's detail panel (components/library/DetailPanel.tsx),
  * which fetches client-side instead of rendering a full page.
  */
 export async function GET(request: Request) {

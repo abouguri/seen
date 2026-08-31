@@ -69,6 +69,11 @@ export type TmdbTvDetail = {
    *  no episodes. The episodes themselves need a separate /season/{n}
    *  fetch (see TmdbSeasonDetail) — but the season list itself is free. */
   seasons?: TmdbSeasonSummary[];
+  /** Unlike created_by, this one DOES need append_to_response=credits —
+   *  same shape as a movie's credits.cast once fetched. */
+  credits?: {
+    cast?: TmdbCastMember[];
+  };
 };
 
 export type TmdbSeasonSummary = {

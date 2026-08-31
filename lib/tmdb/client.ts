@@ -153,10 +153,10 @@ export async function discoverTmdbShowsByYear(
   return data.results;
 }
 
-/** Unlike fetchTmdbMovieDetail, no append_to_response is needed —
- *  created_by is already in the base /tv/{id} response. */
+/** created_by is native to the base /tv/{id} response, but cast isn't —
+ *  append_to_response=credits is needed for that, same as movies. */
 export async function fetchTmdbShowDetail(id: number): Promise<TmdbTvDetail> {
-  const url = `${TMDB_BASE}/tv/${id}`;
+  const url = `${TMDB_BASE}/tv/${id}?append_to_response=credits`;
 
   const res = await fetch(url, {
     headers: authHeaders(),

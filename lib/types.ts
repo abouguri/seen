@@ -67,6 +67,7 @@ export type ShowDetail = {
   backdropPath: string | null;
   /** TV's created_by, not a director list. */
   creators: string[];
+  castMembers: CastMember[];
   genres: string[];
   tmdbRating: number | null;
   numberOfSeasons: number | null;

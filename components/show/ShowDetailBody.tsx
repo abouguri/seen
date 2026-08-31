@@ -8,6 +8,7 @@ import { ShowViewingHistory } from "@/components/show/ShowViewingHistory";
 import { SeasonChecklist } from "@/components/show/SeasonChecklist";
 import { RemoveFromLibraryButton } from "@/components/library/RemoveFromLibraryButton";
 import { FixMatchSheet } from "@/components/library/FixMatchSheet";
+import { CastList } from "@/components/film/CastList";
 import { posterUrl, backdropUrl } from "@/lib/images";
 import { copy } from "@/lib/copy";
 import type { EpisodeWatchEntry, SeasonSummary, ShowDetail, ShowWatchEntry } from "@/lib/types";
@@ -181,6 +182,13 @@ export function ShowDetailBody({
           <div className="border-separator mt-9 border-t pt-5">
             <p className="text-eyebrow text-label-3 mb-2.5">{copy.film.synopsis}</p>
             <p className="text-subhead text-label-2 leading-relaxed">{detail.overview}</p>
+          </div>
+        )}
+
+        {detail !== null && detail.castMembers.length > 0 && (
+          <div className="mt-9">
+            <p className="text-eyebrow text-label-3 mb-2.5">{copy.film.cast}</p>
+            <CastList cast={detail.castMembers} />
           </div>
         )}
       </div>

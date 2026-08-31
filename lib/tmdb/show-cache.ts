@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TmdbTvDetail, TmdbTvSearchResult } from "@/lib/tmdb/raw-types";
-import type { ShowDetail } from "@/lib/types";
+import type { CastMember, ShowDetail } from "@/lib/types";
 
 export type ShowRow = {
   id: number;
@@ -14,6 +14,7 @@ export type ShowRow = {
   backdrop_path: string | null;
   overview: string | null;
   creators: string[];
+  cast_members: CastMember[];
   genres: string[];
   tmdb_rating: number | null;
   popularity: number | null;
@@ -32,6 +33,13 @@ function extractYear(date: string | null | undefined): number | null {
 
 function extractCreators(detail: TmdbTvDetail): string[] {
   return (detail.created_by ?? []).map((c) => c.name);
+}
+
+/** Top 10 billed — same shape/limit as lib/tmdb/cache.ts's extractCast. */
+function extractCast(detail: TmdbTvDetail): CastMember[] {
+  return (detail.credits?.cast ?? [])
+    .slice(0, 10)
+    .map((c) => ({ id: c.id, name: c.name, profilePath: c.profile_path ?? null }));
 }
 
 /**
@@ -73,6 +81,7 @@ export async function upsertShowDetail(
     backdrop_path: detail.backdrop_path,
     overview: detail.overview ?? null,
     creators: extractCreators(detail),
+    cast_members: extractCast(detail),
     genres: (detail.genres ?? []).map((g) => g.name),
     tmdb_rating: detail.vote_average ?? null,
     popularity: detail.popularity ?? null,
@@ -100,6 +109,7 @@ export function mapRowToShowDetail(row: ShowRow): ShowDetail {
     posterPath: row.poster_path,
     backdropPath: row.backdrop_path,
     creators: row.creators,
+    castMembers: row.cast_members,
     genres: row.genres,
     tmdbRating: row.tmdb_rating,
     numberOfSeasons: row.number_of_seasons,
@@ -118,6 +128,7 @@ export function mapTmdbDetailToShowDetail(detail: TmdbTvDetail): ShowDetail {
     posterPath: detail.poster_path,
     backdropPath: detail.backdrop_path,
     creators: extractCreators(detail),
+    castMembers: extractCast(detail),
     genres: (detail.genres ?? []).map((g) => g.name),
     tmdbRating: detail.vote_average ?? null,
     numberOfSeasons: detail.number_of_seasons ?? null,

@@ -16,6 +16,7 @@ export type FilmRow = {
   runtime: number | null;
   overview: string | null;
   directors: string[];
+  cast_members: string[];
   genres: string[];
   tmdb_rating: number | null;
   popularity: number | null;
@@ -31,6 +32,11 @@ function extractYear(releaseDate: string | null | undefined): number | null {
 
 function extractDirectors(detail: TmdbMovieDetail): string[] {
   return (detail.credits?.crew ?? []).filter((c) => c.job === "Director").map((c) => c.name);
+}
+
+/** Top 10 billed — TMDB pre-sorts credits.cast by billing order. */
+function extractCast(detail: TmdbMovieDetail): string[] {
+  return (detail.credits?.cast ?? []).slice(0, 10).map((c) => c.name);
 }
 
 /**
@@ -79,6 +85,7 @@ export async function upsertFilmDetail(
     runtime: detail.runtime ?? null,
     overview: detail.overview ?? null,
     directors: extractDirectors(detail),
+    cast_members: extractCast(detail),
     genres: (detail.genres ?? []).map((g) => g.name),
     tmdb_rating: detail.vote_average ?? null,
     popularity: detail.popularity ?? null,
@@ -122,6 +129,7 @@ export function mapRowToFilmDetail(row: FilmRow): FilmDetail {
     posterPath: row.poster_path,
     backdropPath: row.backdrop_path,
     directors: row.directors,
+    castMembers: row.cast_members,
     genres: row.genres,
     tmdbRating: row.tmdb_rating,
   };
@@ -138,6 +146,7 @@ export function mapTmdbDetailToFilmDetail(detail: TmdbMovieDetail): FilmDetail {
     posterPath: detail.poster_path,
     backdropPath: detail.backdrop_path,
     directors: extractDirectors(detail),
+    castMembers: extractCast(detail),
     genres: (detail.genres ?? []).map((g) => g.name),
     tmdbRating: detail.vote_average ?? null,
   };

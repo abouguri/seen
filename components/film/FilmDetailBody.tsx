@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Stars } from "@/components/ui/Stars";
 import { ViewingHistory } from "@/components/film/ViewingHistory";
 import { RemoveFromLibraryButton } from "@/components/library/RemoveFromLibraryButton";
 import { FixMatchSheet } from "@/components/library/FixMatchSheet";
+import { PersonLinks } from "@/components/library/PersonLinks";
 import { posterUrl, backdropUrl } from "@/lib/images";
 import { formatRuntime } from "@/lib/dates";
 import { copy } from "@/lib/copy";
@@ -57,14 +58,14 @@ export function FilmDetailBody({
   const poster = posterUrl(header.posterPath, "w500");
   const backdrop = detail ? backdropUrl(detail.backdropPath, "w1280") : null;
 
-  const metaParts =
+  const metaNodes: React.ReactNode[] | null =
     detail === null
       ? null
       : [
           header.year ? String(header.year) : null,
-          detail.directors.length ? detail.directors.join(", ") : null,
+          detail.directors.length ? <PersonLinks names={detail.directors} /> : null,
           formatRuntime(detail.runtime),
-        ].filter(Boolean);
+        ].filter((node) => node !== null);
 
   const Heading = headingLevel;
 
@@ -97,11 +98,18 @@ export function FilmDetailBody({
         </div>
         <div className="flex flex-1 flex-col justify-end pb-2">
           <Heading className="text-display-2">{header.title}</Heading>
-          {metaParts === null ? (
+          {metaNodes === null ? (
             <div className="bg-surface-2 mt-2 h-4 w-3/4 animate-pulse rounded-xs" />
           ) : (
-            metaParts.length > 0 && (
-              <p className="text-subhead text-label-2 mt-1">{metaParts.join(" · ")}</p>
+            metaNodes.length > 0 && (
+              <p className="text-subhead text-label-2 mt-1">
+                {metaNodes.map((node, index) => (
+                  <Fragment key={index}>
+                    {index > 0 && " · "}
+                    {node}
+                  </Fragment>
+                ))}
+              </p>
             )
           )}
         </div>
@@ -182,6 +190,15 @@ export function FilmDetailBody({
           <div className="border-separator mt-9 border-t pt-5">
             <p className="text-eyebrow text-label-3 mb-2.5">{copy.film.synopsis}</p>
             <p className="text-subhead text-label-2 leading-relaxed">{detail.overview}</p>
+          </div>
+        )}
+
+        {detail !== null && detail.castMembers.length > 0 && (
+          <div className="mt-9">
+            <p className="text-eyebrow text-label-3 mb-2.5">{copy.film.cast}</p>
+            <p className="text-subhead text-label-2 leading-relaxed">
+              <PersonLinks names={detail.castMembers} />
+            </p>
           </div>
         )}
       </div>

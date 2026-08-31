@@ -107,6 +107,12 @@ export type TmdbCrewMember = {
   name: string;
 };
 
+/** TMDB pre-sorts credits.cast by billing order, so no `order` field is
+ *  needed here — the top N of the array as returned is the top N billed. */
+export type TmdbCastMember = {
+  name: string;
+};
+
 export type TmdbGenre = {
   id: number;
   name: string;
@@ -126,6 +132,7 @@ export type TmdbMovieDetail = {
   popularity?: number | null;
   credits?: {
     crew: TmdbCrewMember[];
+    cast?: TmdbCastMember[];
   };
 };
 
@@ -143,9 +150,11 @@ export type TmdbPersonSearchResponse = {
   results: TmdbPersonSearchResult[];
 };
 
-/** /person/{id}/movie_credits. The crew array is what carries directing
- *  work; `cast` is ignored here. One person can appear more than once on
- *  the same film (director *and* writer), so callers must dedupe by id. */
+/** /person/{id}/movie_credits. `crew` carries directing (and other
+ *  behind-the-camera) work, `cast` carries acting roles. One person can
+ *  appear more than once in `crew` for the same film (director *and*
+ *  writer), so callers must dedupe by id. */
 export type TmdbPersonMovieCredits = {
   crew: (TmdbSearchResult & { job?: string | null; department?: string | null })[];
+  cast?: (TmdbSearchResult & { character?: string | null })[];
 };

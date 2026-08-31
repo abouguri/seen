@@ -75,7 +75,7 @@ function stars(rating: number): string {
  * that: person credits are full of shorts, TV movies and untitled
  * projects, and requiring both strips most of them.
  */
-function isPresentable(result: TmdbSearchResult): boolean {
+export function isPresentable(result: TmdbSearchResult): boolean {
   return Boolean(result.poster_path) && yearOf(result) !== null;
 }
 

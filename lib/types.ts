@@ -25,6 +25,7 @@ export type FilmDetail = {
   posterPath: string | null;
   backdropPath: string | null;
   directors: string[];
+  castMembers: string[];
   genres: string[];
   tmdbRating: number | null;
 };

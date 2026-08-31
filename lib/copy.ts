@@ -182,6 +182,7 @@ export const copy = {
     invalidQuery: "Type a title to search.",
     filmNotFound: "Couldn't find that film.",
     showNotFound: "Couldn't find that show.",
+    personNotFound: "Couldn't find that person.",
     entrySaveFailed: "Couldn't save that viewing. Check your connection and try again.",
     rematchFailed: "Couldn't fix that match. Check your connection and try again.",
     libraryLoadFailed: "Couldn't load your library. Check your connection and try again.",
@@ -220,6 +221,12 @@ export const copy = {
     editViewing: "Edit viewing",
     deleteViewing: "Delete viewing",
     deleteViewingConfirm: "Delete this viewing? This can't be undone.",
+    cast: "Cast",
+  },
+  people: {
+    asDirector: "As director",
+    asActor: "As actor",
+    empty: "Nothing presentable found for this person.",
   },
   episodes: {
     /* SeasonChecklist — the season/episode tracking entry point on the

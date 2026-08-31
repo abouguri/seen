@@ -298,6 +298,33 @@ export async function fetchTmdbDirectedFilms(personId: number): Promise<TmdbSear
 }
 
 /**
+ * Everything a person is credited as having acted in — the sibling of
+ * fetchTmdbDirectedFilms, for a person page's "As actor" section. Same
+ * endpoint, same cache key, so calling both for one person costs one real
+ * TMDB round trip: Next's fetch Data Cache serves the second from the
+ * first's response.
+ */
+export async function fetchTmdbActingFilms(personId: number): Promise<TmdbSearchResult[]> {
+  const url = `${TMDB_BASE}/person/${personId}/movie_credits`;
+
+  const res = await fetch(url, {
+    headers: authHeaders(),
+    next: { revalidate: RECOMMENDATION_TTL },
+  });
+
+  if (!res.ok) {
+    throw new TmdbError(`TMDB movie credits failed with status ${res.status}`);
+  }
+
+  const data = (await res.json()) as TmdbPersonMovieCredits;
+  const byId = new Map<number, TmdbSearchResult>();
+  for (const credit of data.cast ?? []) {
+    if (!byId.has(credit.id)) byId.set(credit.id, credit);
+  }
+  return [...byId.values()];
+}
+
+/**
  * Well-regarded films from a decade — the source for the blind-spot
  * shelves. Sorted by vote average rather than popularity, with a vote
  * floor: popularity.desc on an old decade returns whatever is trending

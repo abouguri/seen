@@ -44,6 +44,12 @@ export const copy = {
     onThisDayHeading: "On this day",
     onThisDayYearsAgo: (n: number) => `${n} year${n === 1 ? "" : "s"} ago`,
     onThisDayWrote: "You wrote:",
+    // "Shuffle a rewatch" names the action, not the feature — a button
+    // that just said "Rewatch roulette" wouldn't say what tapping it does.
+    rouletteTrigger: "Shuffle a rewatch",
+    rouletteSheetTitle: "Rewatch roulette",
+    rouletteShuffleAgain: "Shuffle again",
+    rouletteViewAction: "View film",
   },
 
   notFound: {

@@ -34,7 +34,7 @@ import type {
  */
 
 /** Ratings are stored 1–10; a 4★ is an 8. */
-const FOUR_STARS = 8;
+export const FOUR_STARS = 8;
 const FIVE_STARS = 10;
 
 /** Below this the archive is too thin for director or blind-spot

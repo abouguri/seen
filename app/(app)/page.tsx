@@ -3,8 +3,9 @@ import { buttonClasses } from "@/components/ui/Button";
 import { LeadRecommendation } from "@/components/home/LeadRecommendation";
 import { RecommendationShelf } from "@/components/home/RecommendationShelf";
 import { OnThisDay } from "@/components/home/OnThisDay";
+import { RewatchRoulette } from "@/components/home/RewatchRoulette";
 import { loadArchive } from "@/lib/recommendations/archive";
-import { buildRecommendations, THIN_ARCHIVE } from "@/lib/recommendations/engine";
+import { buildRecommendations, FOUR_STARS, THIN_ARCHIVE } from "@/lib/recommendations/engine";
 import { getOnThisDayEntries } from "@/lib/on-this-day";
 import { createClient } from "@/lib/supabase/server";
 import { copy } from "@/lib/copy";
@@ -48,6 +49,16 @@ export default async function HomePage() {
 
   const { libraryCount, lead, shelves } = await buildRecommendations(archive);
 
+  const rouletteCandidates = archive.films
+    .filter((film) => film.rating !== null && film.rating >= FOUR_STARS)
+    .map((film) => ({
+      id: film.id,
+      title: film.title,
+      year: film.year,
+      posterPath: film.posterPath,
+      rating: film.rating!,
+    }));
+
   const intro =
     libraryCount === 0
       ? copy.home.emptyBody
@@ -86,6 +97,12 @@ export default async function HomePage() {
             <p className="text-body text-label-2 mt-5 max-w-[46ch] leading-6 text-pretty">
               {intro}
             </p>
+
+            {rouletteCandidates.length > 0 && (
+              <div className="mt-6">
+                <RewatchRoulette candidates={rouletteCandidates} />
+              </div>
+            )}
           </header>
 
           {libraryCount === 0 ? (

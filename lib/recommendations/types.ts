@@ -30,6 +30,7 @@ export type ShelfKind =
   | "complete-director"
   | "complete-actor"
   | "blind-spot"
+  | "genre-blind-spot"
   | "because-rated"
   | "rewatch";
 

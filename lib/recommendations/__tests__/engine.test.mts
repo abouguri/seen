@@ -34,20 +34,28 @@ const archiveOf = (films: ArchiveFilm[], dismissed: number[] = []): Archive => (
   films, loggedIds: new Set(films.map(f => f.id)), dismissedIds: new Set(dismissed),
 });
 
-const NOLAN = ["Christopher Nolan"], FINCHER = ["David Fincher"];
+const NOLAN = ["Christopher Nolan"], FINCHER = ["David Fincher"], DRAMA = ["Drama"];
 const thirty: ArchiveFilm[] = [
-  mk({ id: 1, title: "Memento", year: 2000, directors: NOLAN, rating: 9, lastWatchedOn: "2015-03-02" }),
-  mk({ id: 2, title: "The Prestige", year: 2006, directors: NOLAN, castMembers: ["Michael Caine"], rating: 8 }),
-  mk({ id: 3, title: "Inception", year: 2010, directors: NOLAN, castMembers: ["Michael Caine"], rating: 10, lastWatchedOn: "2024-01-01" }),
-  mk({ id: 4, title: "Interstellar", year: 2014, directors: NOLAN, rating: 9 }),
-  mk({ id: 5, title: "Dunkirk", year: 2017, directors: NOLAN, rating: 8 }),
-  mk({ id: 10, title: "Se7en", year: 1995, directors: FINCHER, rating: 10, lastWatchedOn: "2016-05-05" }),
-  mk({ id: 11, title: "Fight Club", year: 1999, directors: FINCHER, rating: 9 }),
-  mk({ id: 12, title: "Zodiac", year: 2007, directors: FINCHER, rating: 8 }),
+  mk({ id: 1, title: "Memento", year: 2000, directors: NOLAN, genres: DRAMA, rating: 9, lastWatchedOn: "2015-03-02" }),
+  mk({ id: 2, title: "The Prestige", year: 2006, directors: NOLAN, castMembers: ["Michael Caine"], genres: DRAMA, rating: 8 }),
+  mk({ id: 3, title: "Inception", year: 2010, directors: NOLAN, castMembers: ["Michael Caine"], genres: DRAMA, rating: 10, lastWatchedOn: "2024-01-01" }),
+  mk({ id: 4, title: "Interstellar", year: 2014, directors: NOLAN, genres: DRAMA, rating: 9 }),
+  mk({ id: 5, title: "Dunkirk", year: 2017, directors: NOLAN, genres: DRAMA, rating: 8 }),
+  mk({ id: 10, title: "Se7en", year: 1995, directors: FINCHER, genres: DRAMA, rating: 10, lastWatchedOn: "2016-05-05" }),
+  mk({ id: 11, title: "Fight Club", year: 1999, directors: FINCHER, genres: DRAMA, rating: 9 }),
+  mk({ id: 12, title: "Zodiac", year: 2007, directors: FINCHER, genres: DRAMA, rating: 8 }),
 ];
-// pad to 30 across decades, 2010s heaviest so the 90s read as thinnest
+// pad to 30 across decades, 2010s heaviest so the 90s read as thinnest.
+// The first two fillers are tagged Horror against the rest's Drama, so
+// Horror (2) reads as the thinnest genre.
 for (let i = 0; i < 22; i++) {
-  thirty.push(mk({ id: 500 + i, title: `Filler ${i}`, year: i < 18 ? 2010 + (i % 10) : 1990 + i, directors: [`Dir ${i}`] }));
+  thirty.push(mk({
+    id: 500 + i,
+    title: `Filler ${i}`,
+    year: i < 18 ? 2010 + (i % 10) : 1990 + i,
+    directors: [`Dir ${i}`],
+    genres: i < 2 ? ["Horror"] : DRAMA,
+  }));
 }
 
 console.log("\n=== 0 films ===");
@@ -100,6 +108,16 @@ console.log("\n=== 30 films (full) ===");
 
   const all = [r.lead!, ...r.shelves.flatMap(s => s.items)].map(i => i.id);
   check("no film appears twice on the page", new Set(all).size === all.length);
+
+  const genreShelf = r.shelves.find(s => s.kind === "genre-blind-spot");
+  check("genre blind-spot shelf exists", genreShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));
+  if (genreShelf) {
+    check("genre shelf names Horror", genreShelf.title === "Your Horror shelf is thin", genreShelf.title);
+    check("genre shelf reason states the count", genreShelf.reason === "Your Horror shelf is the thinnest — 2 films.",
+          genreShelf.reason);
+    check("genre shelf doesn't re-offer the logged Horror-discover film",
+          !genreShelf.items.some(i => i.id === 11));
+  }
 
   const actorShelf = r.shelves.find(s => s.kind === "complete-actor");
   check("actor shelf exists", actorShelf !== undefined, JSON.stringify(r.shelves.map(s => s.kind)));

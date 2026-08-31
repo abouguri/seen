@@ -1,12 +1,14 @@
 import "server-only";
 import {
   discoverTmdbMoviesByDecade,
+  discoverTmdbMoviesByGenre,
   fetchTmdbActingFilms,
   fetchTmdbDirectedFilms,
   fetchTmdbRecommendations,
   findTmdbActorId,
   findTmdbDirectorId,
 } from "@/lib/tmdb/client";
+import { getGenreMap } from "@/lib/tmdb/genres";
 import type { TmdbSearchResult } from "@/lib/tmdb/raw-types";
 import type {
   Archive,
@@ -412,6 +414,54 @@ async function buildBlindSpotShelf(
   }, null);
 }
 
+/**
+ * Same shape as buildBlindSpotShelf, one axis over: thinnest genre rather
+ * than thinnest decade. discoverTmdbMoviesByGenre takes an id, but the
+ * archive only carries resolved genre names (see lib/tmdb/cache.ts's own
+ * comment on why) — getGenreMap() is what search/discover use to resolve
+ * ids to names when caching results, so it's inverted here to go the
+ * other way.
+ */
+async function buildGenreBlindSpotShelf(
+  archive: Archive,
+  leadId: number | null,
+): Promise<Shelf | null> {
+  const counts = new Map<string, number>();
+  for (const film of archive.films) {
+    for (const genre of film.genres) {
+      counts.set(genre, (counts.get(genre) ?? 0) + 1);
+    }
+  }
+
+  // Same reasoning as the decade version: nothing is thin without a
+  // second genre to be thin relative to.
+  if (counts.size < 2) return null;
+
+  const [genreName, count] = [...counts.entries()].reduce((a, b) => (b[1] < a[1] ? b : a));
+
+  return settled(async () => {
+    const genreMap = await getGenreMap();
+    const genreId = [...genreMap.entries()].find(([, name]) => name === genreName)?.[0];
+    if (genreId === undefined) return null;
+
+    const items = (await discoverTmdbMoviesByGenre(genreId))
+      .filter(isPresentable)
+      .filter((film) => !archive.loggedIds.has(film.id) && !archive.dismissedIds.has(film.id))
+      .filter((film) => film.id !== leadId)
+      .slice(0, SHELF_SIZE)
+      .map((film) => toRecommendation(film, `${yearOf(film)} — from the genre your archive is thinnest on.`));
+
+    if (items.length === 0) return null;
+
+    return {
+      kind: "genre-blind-spot" as const,
+      title: `Your ${genreName} shelf is thin`,
+      reason: `Your ${genreName} shelf is the thinnest — ${count} ${count === 1 ? "film" : "films"}.`,
+      items,
+    };
+  }, null);
+}
+
 /* -------------------------------------------------------------------------
    4. Because you rated X highly. At most two.
    ------------------------------------------------------------------------- */
@@ -522,8 +572,9 @@ export async function buildRecommendations(archive: Archive): Promise<Recommenda
   const lead = buildLead(profiles) ?? (await buildSeededLead(archive));
   const leadId = lead?.id ?? null;
 
-  const [blindSpot, seedShelves] = await Promise.all([
+  const [blindSpot, genreBlindSpot, seedShelves] = await Promise.all([
     buildBlindSpotShelf(archive, leadId),
+    buildGenreBlindSpotShelf(archive, leadId),
     buildSeedShelves(archive, leadId, 2),
   ]);
 
@@ -533,6 +584,7 @@ export async function buildRecommendations(archive: Archive): Promise<Recommenda
     ...buildDirectorShelves(profiles, leadId),
     ...buildActorShelves(actorProfiles, leadId),
     ...(blindSpot ? [blindSpot] : []),
+    ...(genreBlindSpot ? [genreBlindSpot] : []),
     ...seedShelves,
     ...(rewatch ? [rewatch] : []),
   ]).slice(0, MAX_SHELVES);

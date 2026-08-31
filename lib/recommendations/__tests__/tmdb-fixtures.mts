@@ -48,6 +48,15 @@ export const RECS = [f(3, "Inception", 2010), f(14, "Alien 3", 1992), f(20, "The
 /** Decade discover — includes logged film 10. */
 export const DECADE_90S = [f(10, "Se7en", 1995), f(22, "Fargo", 1996), f(23, "Rushmore", 1998)];
 
+/** Genre discover, for the thinnest-genre shelf — includes logged film 11
+ *  (must be filtered out, same discipline as every other source here). */
+export const HORROR_ID = 27;
+export const GENRE_MAP = [
+  { id: 18, name: "Drama" },
+  { id: HORROR_ID, name: "Horror" },
+];
+export const HORROR_DISCOVER = [f(11, "Fight Club", 1999), f(24, "The Thing", 1982), f(25, "Hereditary", 2018)];
+
 export function stubFetch() {
   const calls: string[] = [];
   globalThis.fetch = (async (input: string | URL) => {
@@ -78,7 +87,11 @@ export function stubFetch() {
     if (url.includes(`/person/${FINCHER_ID}/movie_credits`)) return json({ crew: FINCHER_FILMS });
     if (url.includes(`/person/${CAINE_ID}/movie_credits`)) return json({ cast: CAINE_FILMS });
     if (url.includes("/recommendations")) return json({ results: RECS });
-    if (url.includes("/discover/movie")) return json({ results: DECADE_90S });
+    if (url.includes("/genre/movie/list")) return json({ genres: GENRE_MAP });
+    if (url.includes("/discover/movie")) {
+      if (url.includes("with_genres")) return json({ results: HORROR_DISCOVER });
+      return json({ results: DECADE_90S });
+    }
     return json({ results: [] });
   }) as typeof fetch;
   return calls;
